@@ -67,7 +67,7 @@ a.click('skill');
 ar=a.state();
 assert.equal(ar.fp,16);
 assert.equal(ar.enemy.hp,4);
-assert.equal(ar.hp,50);
+assert.equal(ar.hp,49); // Rat hits Arcanist armor 2 for 5 damage
 assert.equal(ar.rng,71);
 // A new game always restarts the deterministic generator.
 const b=setup();
