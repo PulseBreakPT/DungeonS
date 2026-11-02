@@ -68,3 +68,17 @@ Projeto original experimental. Não afiliado à Colossal Order nem à Paradox In
 - Design com indicadores de crescimento, capacidade dos serviços e saúde urbana.
 
 Todos os gráficos do mundo são desenhados localmente com Canvas 2D, sem motor 3D externo.
+
+## Director Edition — SSS+ (novembro de 2026)
+
+A interface foi redesenhada para privilegiar o mapa e a jogabilidade:
+
+- HUD cinematográfica com barra superior compacta, ferramentas recolhíveis e relatório municipal opcional.
+- Ferramentas separadas por categorias, modo de construção contextual com preço, pré-visualização de terreno válido/inválido e possibilidade de sair rapidamente da ferramenta.
+- Vistas de cidade, zonamento e trânsito, minimapa no desktop e inspetor de parcela.
+- Iluminação selecionável entre **dia, crepúsculo e noite**, com janelas iluminadas à noite e nomes dos setores desenhados sobre o mapa no desktop.
+- Indicador de próxima decisão derivado dos dados reais do motor e apresentação especial dos marcos de população existentes (500 e 1 000 habitantes).
+- Controlos Android reorganizados com gaveta de construção, interface adaptativa e acessibilidade de botões.
+- Sem frameworks nem serviços pagos. Todos os saves do formato `dungeons-metropole-v1` continuam válidos.
+
+**Testes:** `node tests/smoke.cjs` e `node tests/ui-smoke.cjs`.
