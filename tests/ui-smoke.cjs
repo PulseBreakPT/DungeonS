@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+const ctx=new Proxy({createLinearGradient(){return {addColorStop(){}}}},{get(o,k){if(!(k in o))o[k]=()=>{};return o[k]},set(o,k,v){o[k]=v;return true}});
+const nodes=new Map(),listeners={};
+const make=id=>({id,style:{},classList:{add(){},remove(){},toggle(){}},addEventListener(name,fn){listeners[id+':'+name]=fn},setAttribute(){},getBoundingClientRect(){return{left:0,top:0,width:1280,height:800}},getContext(){return ctx},toDataURL(){return'data:'},click(){},remove(){},appendChild(){},get dataset(){return {}},textContent:'',innerHTML:''});
+const document={body:make('body'),getElementById(id){if(!nodes.has(id))nodes.set(id,make(id));return nodes.get(id)},querySelectorAll(){return []},addEventListener(name,fn){listeners['doc:'+name]=fn},createElement(tag){return make(tag)}};
+let raf;const localStorage={data:{},getItem(k){return this.data[k]||null},setItem(k,v){this.data[k]=v}};
+const window={addEventListener(){},devicePixelRatio:1,CityEngine:require('../engine.js')};
+const sb={window,document,localStorage,innerWidth:1280,performance:{now:()=>100},requestAnimationFrame(fn){raf=fn},setTimeout(){return 1},clearTimeout(){},console,Math,Date,Blob,URL,confirm:()=>true,prompt:()=> 'Cidade de Teste'};
+vm.runInNewContext(fs.readFileSync('game.js','utf8'),sb,{filename:'game.js',timeout:3000});
+assert.ok(localStorage.getItem(window.CityEngine.SAVE_KEY));
+assert.match(nodes.get('money').textContent,/€/);
+assert.equal(typeof raf,'function');raf(150);
+assert.ok(nodes.get('cityName').textContent);
+console.log('PASS: browser bootstrap, UI binding and first isometric frame (mock Canvas).');

@@ -1,51 +1,58 @@
-# ABISMO • DungeonS
+# METRÓPOLE · City Builder
 
-> Desce. Sobrevive. Conquista.
+Um simulador de construção e gestão de cidades isométrico, desenvolvido em HTML, CSS e JavaScript para funcionar em Android e desktop, diretamente no browser. Este projeto transforma o antigo **DungeonS / ABISMO** num jogo de planeamento urbano inspirado no género de *Cities: Skylines*. É um protótipo independente, não uma cópia do jogo original.
 
-Um dungeon crawler de fantasia sombria, construído para funcionar no browser, em desktop e Android. Sem conta, sem backend e sem instalação.
+**Jogar:** https://pulsebreakpt.github.io/DungeonS/
 
-## Jogar
+## O que já é jogável
 
-**GitHub Pages:** https://pulsebreakpt.github.io/DungeonS/
+- Terreno isométrico de **36 × 36** células, lago, vegetação, edifícios com alturas diferentes e veículos animados.
+- Construção e demolição de estradas, zonas residenciais, comerciais e industriais.
+- Edifícios residenciais e empresas a desenvolverem-se em 3 níveis conforme procura, acesso e condições da cidade.
+- Central elétrica, estação de água, bombeiros, polícia, escola, hospital e parques.
+- Simulação mensal de população, emprego, desemprego, felicidade, valor de terreno, poluição simplificada, capacidade de água e energia.
+- Economia com receitas fiscais, manutenção, saldo mensal e impostos de 4% a 20%.
+- Controlo da velocidade, pausa, zoom, movimento da câmara, construção por arrastamento e desfazer.
+- Save automático em `localStorage`, exportação e importação JSON e captura PNG.
+- Painel financeiro, eventos e recompensas por marcos de população.
+- Interface responsiva para ecrãs pequenos e grandes, com controlos táteis e pinch-to-zoom.
 
-Escolhe Guardião, Arcanista ou Ladino. Explora dez salas, combate criaturas, utiliza habilidades, apanha ouro e enfrenta o Guardião do Limiar. O botão "Laboratório v0.1" inicia um teste com o Guardião vs. Rato Ósseo e R=17, para verificar as contas do combate.
+## Como jogar
 
-## Motor determinístico
+Escolhe **Estradas** e liga novas vias à cidade. Seleciona **Residencial**, **Comércio** e **Indústria** e pinta os terrenos adjacentes às estradas. Deixa os meses passar para os edifícios se desenvolverem. Acompanha a procura de zonas, o abastecimento de energia e água, os empregos e a felicidade. Acrescenta serviços perto dos bairros e ajusta impostos se necessário.
 
-A rolagem seguinte depende da anterior:
+No Android: desliza a barra de ferramentas na parte inferior; arrasta para pintar várias células. Seleciona **Explorar** para deslocar o mapa. Faz zoom com dois dedos ou com os botões `+` e `−`.
 
-\`\`\`txt
-R' = (21 × R + 17) mod 100
-rolagem = R' + 1
-\`\`\`
+No computador: roda do rato para zoom, arrasta no modo Explorar para mover o mapa, teclas `1` a `9` para ferramentas, `Espaço` para pausa e `Ctrl+Z` para desfazer.
 
-- Acerto: 80 + 2 × (AGI atacante − AGI defensor), limitado a 60–95%.
-- Crítico: 5 + AGI, limitado a 5–20% (Ataque Furtivo tem +10 p.p., limite 30%).
-- Dano: max(1, floor(dano-base × multiplicador crítico) − armadura).
-- Guardar, exportar JSON, importar JSON e copiar checkpoint através do separador **Crónica**.
-- Progressão de nível 1 a 10, pontos de atributo nos níveis pares.
-- Combate um contra um e comportamento de inimigos definido por turno.
+## Tecnologia e estrutura
 
-## Estrutura
+| Ficheiro | Função |
+|---|---|
+| `index.html` | Interface e layout |
+| `style.css` | Interface desktop e mobile |
+| `engine.js` | Motor puro e determinístico da cidade, orçamento e regras |
+| `game.js` | Desenho isométrico, eventos, UI e persistência |
+| `tests/smoke.cjs` | Testes sem dependências externas |
+| `.github/workflows/pages.yml` | Validação e publicação automática no GitHub Pages |
 
-- \`index.html\` — estrutura da página.
-- \`style.css\` — interface dark-fantasy responsiva.
-- \`game.js\` — regras, gestão de estado, renderização e persistência.
-- \`assets/sigil.svg\` — ícone vetorial.
-- \`.github/workflows/pages.yml\` — deploy do site estático no GitHub Pages.
+### Verificar o jogo
 
-## Guardar / continuar
+```bash
+node --check engine.js
+node --check game.js
+node tests/smoke.cjs
+node tests/ui-smoke.cjs
+```
 
-Os saves são guardados **localmente** no browser (\`localStorage\`). Não sincronizam entre dispositivos. Para transferir um jogo, abre **Crónica → Exportar save** e importa o JSON no outro dispositivo.
+Basta servir esta pasta com um servidor de ficheiros estáticos. Não precisa de NPM, Vite, motor 3D, backend ou base de dados.
 
-## Publicação
+## Limites atuais
 
-O workflow usa \`actions/deploy-pages\`. Se a publicação não iniciar, abre **Settings → Pages → Build and deployment** e escolhe **GitHub Actions** como origem.
+Este é um **primeiro protótipo jogável**, não um Cities: Skylines completo. O mapa é isométrico 2D, não 3D livre. O tráfego é visual com um índice simplificado, não tem rotas reais por habitante; energia e água usam capacidade municipal global quando as instalações estão ligadas à rede rodoviária; não inclui esgotos, transportes coletivos, cadeias logísticas, desastres, ruas curvas, ferramentas de terreno ou simulação por agente. Estes seriam passos seguintes.
 
-## Limites da versão 0.1
-
-Uma rota de dez salas, 3 classes, 4 tipos de inimigo (incluindo boss), escolhas em salas especiais e sistema de equipamento base. Sem conta online, multiplayer, sincronização na nuvem ou IA generativa executada no browser. Os encontros seguem regras determinísticas; narrativa e lógica são implementadas localmente em JavaScript.
+Os saves são locais em cada browser. Exporta o JSON se quiseres mudar de dispositivo. O jogo não recolhe dados pessoais nem depende de APIs.
 
 ## Licença
 
-Projeto original para desenvolvimento e experimentação.
+Projeto original experimental. Não afiliado à Colossal Order nem à Paradox Interactive.

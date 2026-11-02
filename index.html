@@ -1,28 +1,76 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="theme-color" content="#090e12"/>
-  <meta name="description" content="ABISMO — Um dungeon crawler dark fantasy com combate tático, expedições, evolução e destino nas tuas mãos."/>
-  <title>ABISMO — Desce. Sobrevive. Conquista.</title>
-  <link rel="icon" href="./assets/sigil.svg" type="image/svg+xml"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0b1722"/>
+  <meta name="description" content="METRÓPOLE: constrói estradas, planeia bairros, gere serviços e faz crescer uma cidade viva. Um city builder isométrico grátis no browser."/>
+  <title>METRÓPOLE · Constrói a tua cidade</title>
+  <link rel="icon" href="./assets/city.svg" type="image/svg+xml"/>
   <link rel="stylesheet" href="./style.css"/>
+  <script src="./engine.js" defer></script>
   <script src="./game.js" defer></script>
 </head>
 <body>
-<div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
-<div class="grain" aria-hidden="true"></div>
-<div id="app">
-  <div class="boot-screen">
-    <div class="boot-sigil">✦</div>
-    <h1>ABISMO</h1>
-    <p>O submundo desperta...</p>
+  <div id="app">
+    <canvas id="world" aria-label="Mapa isométrico interativo da cidade. Escolhe uma ferramenta e toca no terreno." tabindex="0"></canvas>
+    <div class="map-vignette" aria-hidden="true"></div>
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon">▥</span><div><span class="brand-kicker">CITY BUILDER</span><strong>METRÓPOLE<span class="brand-dot">.</span></strong></div></div>
+      <button class="city-name" data-action="rename" title="Mudar nome da cidade"><span id="cityName">Nova Aurora</span><span class="edit-icon">✎</span></button>
+      <div class="top-stats">
+        <div class="top-stat"><span class="small-label">SALDO MUNICIPAL</span><strong id="money">118 000 €</strong><span class="change" id="balance">+0 €/mês</span></div>
+        <div class="top-stat"><span class="small-label">POPULAÇÃO</span><strong id="population">0</strong><span class="subtext" id="jobs">0 empregos</span></div>
+        <div class="top-stat happiness"><span class="small-label">FELICIDADE</span><strong id="happiness">--%</strong><span class="subtext">qualidade de vida</span></div>
+      </div>
+      <button class="icon-btn menu-mobile" data-action="toggleStats" aria-label="Ver estatísticas">☷</button>
+    </header>
+    <aside class="tools-panel" id="toolsPanel">
+      <div class="panel-caption"><span>PLANEAMENTO</span><span class="keyhint">1–9</span></div>
+      <div class="tool-grid">
+        <button class="tool active" data-tool="inspect"><span class="tool-icon">↖</span><span class="tool-text">Explorar</span></button>
+        <button class="tool" data-tool="road"><span class="tool-icon">═</span><span class="tool-text">Estradas</span><small>90 €</small></button>
+        <button class="tool" data-tool="res"><span class="tool-icon residential">⌂</span><span class="tool-text">Residencial</span><small>35 €</small></button>
+        <button class="tool" data-tool="com"><span class="tool-icon commercial">▣</span><span class="tool-text">Comércio</span><small>45 €</small></button>
+        <button class="tool" data-tool="ind"><span class="tool-icon industrial">▥</span><span class="tool-text">Indústria</span><small>45 €</small></button>
+        <button class="tool" data-tool="park"><span class="tool-icon park">♣</span><span class="tool-text">Parque</span><small>2,2 mil €</small></button>
+        <button class="tool" data-tool="school"><span class="tool-icon">▤</span><span class="tool-text">Escola</span><small>8,5 mil €</small></button>
+        <button class="tool" data-tool="clinic"><span class="tool-icon">✚</span><span class="tool-text">Hospital</span><small>9,5 mil €</small></button>
+        <button class="tool" data-tool="fire"><span class="tool-icon">♨</span><span class="tool-text">Bombeiros</span><small>10 mil €</small></button>
+        <button class="tool" data-tool="police"><span class="tool-icon">★</span><span class="tool-text">Polícia</span><small>10,5 mil €</small></button>
+        <button class="tool" data-tool="power"><span class="tool-icon">ϟ</span><span class="tool-text">Eletricidade</span><small>14,5 mil €</small></button>
+        <button class="tool" data-tool="water"><span class="tool-icon">◉</span><span class="tool-text">Água</span><small>9,8 mil €</small></button>
+        <button class="tool danger" data-tool="bulldoze"><span class="tool-icon">⌫</span><span class="tool-text">Demolir</span><small>140 €</small></button>
+      </div>
+      <div class="tool-help"><span id="toolInfo">Toca num edifício para ver detalhes. Arrasta para mover o mapa.</span></div>
+    </aside>
+    <section class="right-panel" id="rightPanel">
+      <div class="section-heading"><span>PAINEL DA CIDADE</span><span class="live-dot">● LIVE</span></div>
+      <div class="date-row"><div><span class="date-title" id="date">Abr 2026</span><span class="date-sub">Ciclo económico mensal</span></div><span class="season-icon">☀</span></div>
+      <div class="section-label">PROCURA DE ZONAS</div>
+      <div class="demand-row"><div><span class="demand-dot res"></span> Habitação</div><div class="meter"><i id="resBar"></i></div><b id="resPct">0%</b></div>
+      <div class="demand-row"><div><span class="demand-dot com"></span> Comércio</div><div class="meter"><i id="comBar"></i></div><b id="comPct">0%</b></div>
+      <div class="demand-row"><div><span class="demand-dot ind"></span> Indústria</div><div class="meter"><i id="indBar"></i></div><b id="indPct">0%</b></div>
+      <div class="hairline"></div>
+      <div class="section-label">INFRAESTRUTURAS</div>
+      <div class="utility"><div class="utility-info"><span>ϟ Eletricidade</span><b id="powerText">0 / 0</b></div><div class="meter wide"><i id="powerBar"></i></div></div>
+      <div class="utility"><div class="utility-info"><span>◉ Água</span><b id="waterText">0 / 0</b></div><div class="meter wide"><i id="waterBar"></i></div></div>
+      <div class="mini-metrics"><div><span>TRÂNSITO</span><strong id="traffic">0%</strong></div><div><span>COBERTURA</span><strong id="coverage">0%</strong></div><div><span>DESEMPREGO</span><strong id="unemployed">0%</strong></div></div>
+      <div class="hairline"></div>
+      <div class="budget-header"><span class="section-label">FINANÇAS</span><button class="plain-btn" data-action="budget">Detalhes ›</button></div>
+      <div class="budget-line"><span>Receitas mensais</span><strong class="positive" id="income">+0 €</strong></div>
+      <div class="budget-line"><span>Despesas mensais</span><strong class="negative" id="expenses">−0 €</strong></div>
+      <div class="tax-control"><span>Imposto municipal</span><div><button data-action="taxDown" aria-label="Diminuir imposto">−</button><b id="taxValue">10%</b><button data-action="taxUp" aria-label="Aumentar imposto">+</button></div></div>
+      <div class="hairline"></div>
+      <div class="section-label">NOTÍCIAS DA CIDADE</div>
+      <div id="eventFeed" class="event-feed"></div>
+    </section>
+    <div class="selection-panel hidden" id="selectionPanel" role="status"><button class="selection-close" data-action="closeSelection" aria-label="Fechar">×</button><span class="section-label">TERRENO SELECIONADO</span><strong id="selectionTitle">Terreno</strong><p id="selectionDesc"></p><span id="selectionCoords"></span></div>
+    <div class="map-controls"><button data-action="zoomIn" title="Aproximar" aria-label="Aproximar">+</button><button data-action="zoomOut" title="Afastar" aria-label="Afastar">−</button><button data-action="center" title="Centrar mapa" aria-label="Centrar mapa">◎</button></div>
+    <div class="playbar"><div class="mode-indicator"><span class="pulse"></span><span id="statusText">CIDADE ATIVA</span></div><div class="speed-control"><button data-speed="0" title="Pausa" aria-label="Pausa">Ⅱ</button><button class="selected" data-speed="1" title="Velocidade normal">▶</button><button data-speed="2" title="Velocidade dupla">▶▶</button><button data-speed="3" title="Velocidade tripla">▶▶▶</button></div><button class="playbar-action" data-action="undo" title="Desfazer última construção">↶ <span>Desfazer</span></button><button class="playbar-action" data-action="save" title="Guardar">⇩ <span>Guardar</span></button><button class="playbar-action" data-action="menu" title="Menu e ajuda">☰ <span>Menu</span></button></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="modal" class="modal-wrap hidden" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-top"><div><span class="brand-kicker">METRÓPOLE</span><h2 id="modalTitle">Centro de controlo</h2></div><button class="modal-x" data-action="closeModal" aria-label="Fechar">×</button></div><div id="modalContent"></div></div></div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden/>
   </div>
-</div>
-<div id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
