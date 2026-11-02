@@ -1,76 +1,116 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
-  <meta name="theme-color" content="#0b1722"/>
-  <meta name="description" content="METRÓPOLE: constrói estradas, planeia bairros, gere serviços e faz crescer uma cidade viva. Um city builder isométrico grátis no browser."/>
-  <title>METRÓPOLE · Constrói a tua cidade</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#0b1019"/>
+  <meta name="description" content="METRÓPOLE — constrói o teu horizonte. Um city builder isométrico com economia, serviços e uma cidade viva, no browser e Android."/>
+  <title>METRÓPOLE — Constrói o teu horizonte</title>
   <link rel="icon" href="./assets/city.svg" type="image/svg+xml"/>
-  <link rel="stylesheet" href="./style.css"/>
+  <link rel="stylesheet" href="./style.css?v=2"/>
   <script src="./engine.js" defer></script>
-  <script src="./game.js" defer></script>
+  <script src="./game.js?v=2" defer></script>
 </head>
 <body>
-  <div id="app">
-    <canvas id="world" aria-label="Mapa isométrico interativo da cidade. Escolhe uma ferramenta e toca no terreno." tabindex="0"></canvas>
-    <div class="map-vignette" aria-hidden="true"></div>
-    <header class="topbar">
-      <div class="brand"><span class="brand-icon">▥</span><div><span class="brand-kicker">CITY BUILDER</span><strong>METRÓPOLE<span class="brand-dot">.</span></strong></div></div>
-      <button class="city-name" data-action="rename" title="Mudar nome da cidade"><span id="cityName">Nova Aurora</span><span class="edit-icon">✎</span></button>
-      <div class="top-stats">
-        <div class="top-stat"><span class="small-label">SALDO MUNICIPAL</span><strong id="money">118 000 €</strong><span class="change" id="balance">+0 €/mês</span></div>
-        <div class="top-stat"><span class="small-label">POPULAÇÃO</span><strong id="population">0</strong><span class="subtext" id="jobs">0 empregos</span></div>
-        <div class="top-stat happiness"><span class="small-label">FELICIDADE</span><strong id="happiness">--%</strong><span class="subtext">qualidade de vida</span></div>
-      </div>
-      <button class="icon-btn menu-mobile" data-action="toggleStats" aria-label="Ver estatísticas">☷</button>
-    </header>
-    <aside class="tools-panel" id="toolsPanel">
-      <div class="panel-caption"><span>PLANEAMENTO</span><span class="keyhint">1–9</span></div>
-      <div class="tool-grid">
-        <button class="tool active" data-tool="inspect"><span class="tool-icon">↖</span><span class="tool-text">Explorar</span></button>
-        <button class="tool" data-tool="road"><span class="tool-icon">═</span><span class="tool-text">Estradas</span><small>90 €</small></button>
-        <button class="tool" data-tool="res"><span class="tool-icon residential">⌂</span><span class="tool-text">Residencial</span><small>35 €</small></button>
-        <button class="tool" data-tool="com"><span class="tool-icon commercial">▣</span><span class="tool-text">Comércio</span><small>45 €</small></button>
-        <button class="tool" data-tool="ind"><span class="tool-icon industrial">▥</span><span class="tool-text">Indústria</span><small>45 €</small></button>
-        <button class="tool" data-tool="park"><span class="tool-icon park">♣</span><span class="tool-text">Parque</span><small>2,2 mil €</small></button>
-        <button class="tool" data-tool="school"><span class="tool-icon">▤</span><span class="tool-text">Escola</span><small>8,5 mil €</small></button>
-        <button class="tool" data-tool="clinic"><span class="tool-icon">✚</span><span class="tool-text">Hospital</span><small>9,5 mil €</small></button>
-        <button class="tool" data-tool="fire"><span class="tool-icon">♨</span><span class="tool-text">Bombeiros</span><small>10 mil €</small></button>
-        <button class="tool" data-tool="police"><span class="tool-icon">★</span><span class="tool-text">Polícia</span><small>10,5 mil €</small></button>
-        <button class="tool" data-tool="power"><span class="tool-icon">ϟ</span><span class="tool-text">Eletricidade</span><small>14,5 mil €</small></button>
-        <button class="tool" data-tool="water"><span class="tool-icon">◉</span><span class="tool-text">Água</span><small>9,8 mil €</small></button>
-        <button class="tool danger" data-tool="bulldoze"><span class="tool-icon">⌫</span><span class="tool-text">Demolir</span><small>140 €</small></button>
-      </div>
-      <div class="tool-help"><span id="toolInfo">Toca num edifício para ver detalhes. Arrasta para mover o mapa.</span></div>
-    </aside>
-    <section class="right-panel" id="rightPanel">
-      <div class="section-heading"><span>PAINEL DA CIDADE</span><span class="live-dot">● LIVE</span></div>
-      <div class="date-row"><div><span class="date-title" id="date">Abr 2026</span><span class="date-sub">Ciclo económico mensal</span></div><span class="season-icon">☀</span></div>
-      <div class="section-label">PROCURA DE ZONAS</div>
-      <div class="demand-row"><div><span class="demand-dot res"></span> Habitação</div><div class="meter"><i id="resBar"></i></div><b id="resPct">0%</b></div>
-      <div class="demand-row"><div><span class="demand-dot com"></span> Comércio</div><div class="meter"><i id="comBar"></i></div><b id="comPct">0%</b></div>
-      <div class="demand-row"><div><span class="demand-dot ind"></span> Indústria</div><div class="meter"><i id="indBar"></i></div><b id="indPct">0%</b></div>
-      <div class="hairline"></div>
-      <div class="section-label">INFRAESTRUTURAS</div>
-      <div class="utility"><div class="utility-info"><span>ϟ Eletricidade</span><b id="powerText">0 / 0</b></div><div class="meter wide"><i id="powerBar"></i></div></div>
-      <div class="utility"><div class="utility-info"><span>◉ Água</span><b id="waterText">0 / 0</b></div><div class="meter wide"><i id="waterBar"></i></div></div>
-      <div class="mini-metrics"><div><span>TRÂNSITO</span><strong id="traffic">0%</strong></div><div><span>COBERTURA</span><strong id="coverage">0%</strong></div><div><span>DESEMPREGO</span><strong id="unemployed">0%</strong></div></div>
-      <div class="hairline"></div>
-      <div class="budget-header"><span class="section-label">FINANÇAS</span><button class="plain-btn" data-action="budget">Detalhes ›</button></div>
-      <div class="budget-line"><span>Receitas mensais</span><strong class="positive" id="income">+0 €</strong></div>
-      <div class="budget-line"><span>Despesas mensais</span><strong class="negative" id="expenses">−0 €</strong></div>
-      <div class="tax-control"><span>Imposto municipal</span><div><button data-action="taxDown" aria-label="Diminuir imposto">−</button><b id="taxValue">10%</b><button data-action="taxUp" aria-label="Aumentar imposto">+</button></div></div>
-      <div class="hairline"></div>
-      <div class="section-label">NOTÍCIAS DA CIDADE</div>
-      <div id="eventFeed" class="event-feed"></div>
-    </section>
-    <div class="selection-panel hidden" id="selectionPanel" role="status"><button class="selection-close" data-action="closeSelection" aria-label="Fechar">×</button><span class="section-label">TERRENO SELECIONADO</span><strong id="selectionTitle">Terreno</strong><p id="selectionDesc"></p><span id="selectionCoords"></span></div>
-    <div class="map-controls"><button data-action="zoomIn" title="Aproximar" aria-label="Aproximar">+</button><button data-action="zoomOut" title="Afastar" aria-label="Afastar">−</button><button data-action="center" title="Centrar mapa" aria-label="Centrar mapa">◎</button></div>
-    <div class="playbar"><div class="mode-indicator"><span class="pulse"></span><span id="statusText">CIDADE ATIVA</span></div><div class="speed-control"><button data-speed="0" title="Pausa" aria-label="Pausa">Ⅱ</button><button class="selected" data-speed="1" title="Velocidade normal">▶</button><button data-speed="2" title="Velocidade dupla">▶▶</button><button data-speed="3" title="Velocidade tripla">▶▶▶</button></div><button class="playbar-action" data-action="undo" title="Desfazer última construção">↶ <span>Desfazer</span></button><button class="playbar-action" data-action="save" title="Guardar">⇩ <span>Guardar</span></button><button class="playbar-action" data-action="menu" title="Menu e ajuda">☰ <span>Menu</span></button></div>
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <div id="modal" class="modal-wrap hidden" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-top"><div><span class="brand-kicker">METRÓPOLE</span><h2 id="modalTitle">Centro de controlo</h2></div><button class="modal-x" data-action="closeModal" aria-label="Fechar">×</button></div><div id="modalContent"></div></div></div>
-    <input type="file" id="importFile" accept="application/json,.json" hidden/>
-  </div>
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="icons-sprite" style="position:absolute;width:0;height:0;overflow:hidden">
+  <symbol id="i-city" viewBox="0 0 24 24"><path d="M3 21V9l6-4 4 3v13M13 21V4l8-2v19M2 21h20M6 11h3M6 15h3M16 7h2M16 11h2M16 15h2"/></symbol>
+  <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m4 3 7.6 18 2.2-7.2L21 11Z"/></symbol>
+  <symbol id="i-road" viewBox="0 0 24 24"><path d="M4 21 9 3M20 21 15 3M12 5v3m0 4v3m0 4v2"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v11h14V10M10 21v-7h4v7"/></symbol>
+  <symbol id="i-shop" viewBox="0 0 24 24"><path d="M4 10v11h16V10M3 10l2-7h14l2 7M3 10c0 3 4 3 4 0 0 3 4 3 4 0 0 3 4 3 4 0 0 3 4 3 4 0M10 21v-6h4v6"/></symbol>
+  <symbol id="i-factory" viewBox="0 0 24 24"><path d="M3 21V9l6 4V9l6 4V4h4l2 17ZM3 21h18M7 17h2m3 0h2m3 0h2"/></symbol>
+  <symbol id="i-park" viewBox="0 0 24 24"><path d="M12 21v-7M6 15c-3-1-3-5 0-7-.3-4 5-7 8-4 4-1 7 3 5 6 3 4-1 7-5 5-2 2-6 2-8 0ZM4 21h16"/></symbol>
+  <symbol id="i-school" viewBox="0 0 24 24"><path d="m2 9 10-6 10 6-10 6Zm4 3v7c4 2 8 2 12 0v-7M22 9v10"/></symbol>
+  <symbol id="i-health" viewBox="0 0 24 24"><path d="M4 21V5h16v16ZM9 4V2h6v2M12 9v8m-4-4h8M2 21h20"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 22c5 0 8-4 8-9 0-3-2-5-3-6 0 3-2 3-2 3 0-5-2-7-5-9 0 4-6 6-6 12 0 5 3 9 8 9Zm0-2c2 0 4-2 4-4s-2-4-3-5c0 2-4 3-4 5s1 4 3 4Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 9 4v6c0 5-4 8-9 10-5-2-9-5-9-10V6Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7Z"/></symbol>
+  <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 2S5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13ZM9 16a3 3 0 0 0 3 3"/></symbol>
+  <symbol id="i-demolish" viewBox="0 0 24 24"><path d="M3 21h18M10 5l9 9-5 5-9-9zM7 2l4 4m8 8 3-3M4 10l3 3"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16v-5m5 5V7m5 9v-9"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 3h13l3 3v15H4ZM8 3v7h8V3M8 21v-8h8v8"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 10 6-10 6L2 9Zm-10 11 10 6 10-6M2 18l10 5 10-5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 2v3m0 14v3M4.9 4.9l2.2 2.2m9.8 9.8 2.2 2.2M2 12h3m14 0h3M4.9 19.1l2.2-2.2m9.8-9.8 2.2-2.2"/><circle cx="12" cy="12" r="4"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2.5 2.5M17.5 17.5 20 20M20 4l-2.5 2.5M6.5 17.5 4 20"/></symbol>
+</svg>
+<div id="app">
+  <canvas id="world" aria-label="Mapa interativo da cidade. Seleciona uma ferramenta para construir." tabindex="0"></canvas>
+  <div class="map-vignette" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand"><div class="brand-icon"><svg><use href="#i-city"/></svg></div><div class="brand-type"><span class="brand-kicker">CITY BUILDING SIMULATOR <span class="edition">/ 01</span></span><strong>METRÓPOLE<span class="brand-dot">.</span></strong></div></div>
+    <span class="top-divider"></span>
+    <button class="city-name" data-action="rename" title="Mudar nome"><span class="city-marker"></span><span class="city-name-text"><small>CIDADE ATUAL</small><b id="cityName">Nova Aurora</b></span><svg><use href="#i-chevron"/></svg></button>
+    <div class="top-stats">
+      <div class="top-stat treasury"><span class="small-label">TESOURARIA</span><strong id="money">118 000 €</strong><span class="change" id="balance">+0 €/mês</span></div>
+      <div class="top-stat"><span class="small-label">HABITANTES</span><strong id="population">0</strong><span class="subtext" id="jobs">0 empregos</span></div>
+      <div class="top-stat happiness"><span class="small-label">QUALIDADE DE VIDA</span><strong id="happiness">--%</strong><span class="subtext">índice de felicidade</span></div>
+    </div>
+    <button class="top-icon-help" data-action="help" title="Como jogar" aria-label="Ajuda">?</button>
+    <button class="icon-btn menu-mobile" data-action="toggleStats" aria-label="Abrir painel da cidade"><svg><use href="#i-chart"/></svg></button>
+  </header>
+
+  <div class="world-label" aria-hidden="true"><span class="world-label-line"></span><span>O TEU MUNDO. AS TUAS REGRAS.</span><strong>Constrói o futuro.</strong><small>Uma cidade, infinitas possibilidades.</small></div>
+  <div class="coordinate-tag" aria-hidden="true"><span class="coordinate-dot"></span> REGIÃO 01 <i></i> CONSTRUÇÃO LIVRE</div>
+
+  <aside class="tools-panel" id="toolsPanel">
+    <div class="tool-panel-heading"><div><span class="eyebrow">FERRAMENTAS</span><h2>Construir <span class="lime">+</span></h2></div><span class="keyhint">01 / 13</span></div>
+    <div class="panel-caption"><span>DESENVOLVIMENTO URBANO</span><span>01</span></div>
+    <div class="tool-grid">
+      <button class="tool active" data-tool="inspect"><span class="tool-icon"><svg><use href="#i-pointer"/></svg></span><span class="tool-text">Explorar</span><small>Vista livre</small></button>
+      <button class="tool" data-tool="road"><span class="tool-icon"><svg><use href="#i-road"/></svg></span><span class="tool-text">Estradas</span><small>90 €</small></button>
+      <button class="tool" data-tool="res"><span class="tool-icon residential"><svg><use href="#i-home"/></svg></span><span class="tool-text">Residencial</span><small>35 €</small></button>
+      <button class="tool" data-tool="com"><span class="tool-icon commercial"><svg><use href="#i-shop"/></svg></span><span class="tool-text">Comércio</span><small>45 €</small></button>
+      <button class="tool" data-tool="ind"><span class="tool-icon industrial"><svg><use href="#i-factory"/></svg></span><span class="tool-text">Indústria</span><small>45 €</small></button>
+      <button class="tool" data-tool="park"><span class="tool-icon park"><svg><use href="#i-park"/></svg></span><span class="tool-text">Parques</span><small>2 200 €</small></button>
+      <div class="tool-section">SERVIÇOS DA CIDADE <span>02</span></div>
+      <button class="tool" data-tool="school"><span class="tool-icon"><svg><use href="#i-school"/></svg></span><span class="tool-text">Educação</span><small>8 500 €</small></button>
+      <button class="tool" data-tool="clinic"><span class="tool-icon"><svg><use href="#i-health"/></svg></span><span class="tool-text">Saúde</span><small>9 500 €</small></button>
+      <button class="tool" data-tool="fire"><span class="tool-icon"><svg><use href="#i-fire"/></svg></span><span class="tool-text">Bombeiros</span><small>10 000 €</small></button>
+      <button class="tool" data-tool="police"><span class="tool-icon"><svg><use href="#i-shield"/></svg></span><span class="tool-text">Segurança</span><small>10 500 €</small></button>
+      <button class="tool" data-tool="power"><span class="tool-icon"><svg><use href="#i-bolt"/></svg></span><span class="tool-text">Energia</span><small>14 500 €</small></button>
+      <button class="tool" data-tool="water"><span class="tool-icon"><svg><use href="#i-water"/></svg></span><span class="tool-text">Água</span><small>9 800 €</small></button>
+      <button class="tool danger" data-tool="bulldoze"><span class="tool-icon"><svg><use href="#i-demolish"/></svg></span><span class="tool-text">Demolir</span><small>140 €</small></button>
+    </div>
+    <div class="tool-help"><span class="help-bulb">✳</span><span id="toolInfo">Toca num edifício para ver detalhes. Arrasta para mover o mapa.</span></div>
+  </aside>
+
+  <section class="right-panel" id="rightPanel" aria-label="Informações da cidade">
+    <div class="section-heading"><span class="eyebrow">CENTRO DE CONTROLO</span><button class="panel-close" data-action="toggleStats" aria-label="Fechar painel">×</button><span class="live-dot"><i></i> AO VIVO</span></div>
+    <div class="overview-heading"><div><span class="overline">PANORAMA DA CIDADE</span><strong id="date">Abr 2026</strong><span class="date-sub">Ciclo económico mensal</span></div><div class="weather-pill"><svg><use href="#i-sun"/></svg><span>22°</span></div></div>
+    <div class="city-score"><div><div><span>SAÚDE DA CIDADE</span><strong id="cityHealth">Estável</strong></div><span class="score-icon">✦</span></div><div class="score-track"><span id="healthBar"></span></div><small id="cityHealthDesc">Continua a investir na tua cidade</small></div>
+    <div class="section-row"><span class="section-label">PROCURA DE ZONAS</span><span class="section-meta">EM TEMPO REAL</span></div>
+    <div class="demand-row"><div><span class="demand-dot res"></span> Residencial</div><div class="meter"><i id="resBar"></i></div><b id="resPct">0%</b></div>
+    <div class="demand-row"><div><span class="demand-dot com"></span> Comércio</div><div class="meter"><i id="comBar"></i></div><b id="comPct">0%</b></div>
+    <div class="demand-row"><div><span class="demand-dot ind"></span> Indústria</div><div class="meter"><i id="indBar"></i></div><b id="indPct">0%</b></div>
+    <div class="hairline"></div>
+    <div class="section-row"><span class="section-label">INFRAESTRUTURAS</span><span class="section-meta">CAPACIDADE</span></div>
+    <div class="utility"><div class="utility-info"><span><svg><use href="#i-bolt"/></svg> Eletricidade</span><b id="powerText">0 / 0</b></div><div class="meter wide"><i id="powerBar"></i></div></div>
+    <div class="utility"><div class="utility-info"><span><svg><use href="#i-water"/></svg> Abastecimento de água</span><b id="waterText">0 / 0</b></div><div class="meter wide"><i id="waterBar"></i></div></div>
+    <div class="mini-metrics"><div><span>TRÂNSITO</span><strong id="traffic">0%</strong><small>Circulação</small></div><div><span>COBERTURA</span><strong id="coverage">0%</strong><small>Serviços</small></div><div><span>DESEMPREGO</span><strong id="unemployed">0%</strong><small>Mercado</small></div></div>
+    <div class="hairline"></div>
+    <div class="section-row"><span class="section-label">ORÇAMENTO MENSAL</span><button class="plain-btn" data-action="budget">Ver relatório <svg><use href="#i-chevron"/></svg></button></div>
+    <div class="budget-line"><span>Receitas</span><strong class="positive" id="income">+0 €</strong></div>
+    <div class="budget-line"><span>Despesas</span><strong class="negative" id="expenses">−0 €</strong></div>
+    <div class="tax-control"><span>Imposto municipal</span><div><button data-action="taxDown" aria-label="Diminuir imposto">−</button><b id="taxValue">10%</b><button data-action="taxUp" aria-label="Aumentar imposto">+</button></div></div>
+    <div class="hairline"></div>
+    <div class="section-row"><span class="section-label">DIÁRIO DA CIDADE</span><span class="section-meta">ÚLTIMOS EVENTOS</span></div>
+    <div id="eventFeed" class="event-feed"></div>
+  </section>
+
+  <div class="map-mode-panel" aria-label="Camadas do mapa"><span><svg><use href="#i-layers"/></svg> MAPA</span><button class="active" data-view="normal" aria-pressed="true">Cidade</button><button data-view="zoning" aria-pressed="false">Zonas</button><button data-view="traffic" aria-pressed="false">Trânsito</button></div>
+  <div class="minimap-wrap"><div class="minimap-head"><span><i></i> VISÃO GERAL</span><span>36 × 36</span></div><canvas id="minimap" width="156" height="156" aria-label="Minimapa interativo. Toca para centrar."></canvas><span class="minimap-foot">NOVA AURORA · REGIÃO 01</span></div>
+  <div class="map-controls"><button data-action="zoomIn" title="Aproximar" aria-label="Aproximar">+</button><button data-action="zoomOut" title="Afastar" aria-label="Afastar">−</button><button data-action="center" title="Centrar mapa" aria-label="Centrar mapa"><svg><use href="#i-target"/></svg></button></div>
+  <div class="selection-panel hidden" id="selectionPanel" role="status"><button class="selection-close" data-action="closeSelection" aria-label="Fechar">×</button><span class="section-label">PROPRIEDADE SELECIONADA</span><strong id="selectionTitle">Terreno</strong><p id="selectionDesc"></p><span id="selectionCoords"></span></div>
+
+  <div class="playbar"><div class="mode-indicator"><span class="pulse"></span><span id="statusText">CIDADE ATIVA</span></div><div class="playbar-divider"></div><div class="speed-control"><button data-speed="0" title="Pausa" aria-label="Pausa">Ⅱ</button><button class="selected" data-speed="1" title="Velocidade normal" aria-label="Velocidade normal">▶</button><button data-speed="2" title="Velocidade dupla" aria-label="Velocidade dupla">▶▶</button><button data-speed="3" title="Velocidade tripla" aria-label="Velocidade tripla">▶▶▶</button></div><div class="playbar-divider"></div><button class="playbar-action" data-action="undo" title="Desfazer"><svg><use href="#i-undo"/></svg><span>Desfazer</span></button><button class="playbar-action" data-action="save" title="Guardar"><svg><use href="#i-save"/></svg><span>Guardar</span></button><button class="playbar-action" data-action="menu" title="Menu"><svg><use href="#i-menu"/></svg><span>Menu</span></button></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="modal" class="modal-wrap hidden" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-top"><div><span class="brand-kicker">METRÓPOLE / CENTRO DE CONTROLO</span><h2 id="modalTitle">Centro de controlo</h2></div><button class="modal-x" data-action="closeModal" aria-label="Fechar">×</button></div><div id="modalContent"></div></div></div>
+  <input type="file" id="importFile" accept="application/json,.json" hidden/>
+</div>
 </body>
 </html>

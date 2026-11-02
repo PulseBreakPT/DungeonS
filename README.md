@@ -56,3 +56,15 @@ Os saves são locais em cada browser. Exporta o JSON se quiseres mudar de dispos
 ## Licença
 
 Projeto original experimental. Não afiliado à Colossal Order nem à Paradox Interactive.
+
+
+## Visual SSS (v2)
+
+- Interface redesenhada com identidade verde-lima, ferramentas vetoriais e painéis translúcidos.
+- Mundo isométrico com fachadas, telhados, árvores, estradas e veículos com mais detalhe.
+- Minimapa interativo para saltar entre zonas da cidade (desktop).
+- Camadas **Cidade**, **Zonas** e **Trânsito**, sem alterar a simulação existente.
+- Interface adaptada a ecrãs Android, incluindo barra horizontal de construção, controlos e painel de métricas recolhível.
+- Design com indicadores de crescimento, capacidade dos serviços e saúde urbana.
+
+Todos os gráficos do mundo são desenhados localmente com Canvas 2D, sem motor 3D externo.

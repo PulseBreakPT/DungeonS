@@ -11,4 +11,8 @@ assert.ok(localStorage.getItem(window.CityEngine.SAVE_KEY));
 assert.match(nodes.get('money').textContent,/€/);
 assert.equal(typeof raf,'function');raf(150);
 assert.ok(nodes.get('cityName').textContent);
+const html=fs.readFileSync('index.html','utf8');
+for(const id of ['minimap','cityHealth','healthBar','cityHealthDesc'])assert.ok(html.includes(`id="${id}"`),'Missing new dashboard control: '+id);
+for(const view of ['normal','zoning','traffic'])assert.ok(html.includes(`data-view="${view}"`),'Missing functional map layer: '+view);
+assert.ok(html.includes('viewport-fit=cover')&&html.includes('tool-grid')); 
 console.log('PASS: browser bootstrap, UI binding and first isometric frame (mock Canvas).');
