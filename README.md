@@ -82,3 +82,35 @@ A interface foi redesenhada para privilegiar o mapa e a jogabilidade:
 - Sem frameworks nem serviços pagos. Todos os saves do formato `dungeons-metropole-v1` continuam válidos.
 
 **Testes:** `node tests/smoke.cjs` e `node tests/ui-smoke.cjs`.
+
+
+## METRÓPOLE P0 — Mobilidade, cidadãos, redes e economia (novembro de 2026)
+
+A versão P0 acrescenta `p0.js` (carregado depois de `engine.js` e antes de `game.js`):
+
+- **Rotas reais** por ruas usando Dijkstra com pesos de velocidade e regras direcionais para vias de sentido único. As rotas calculadas alimentam os veículos animados e o mapa de congestionamento por parcela.
+- **Habitantes simulados** com nome, idade, casa, emprego, rendimento, satisfação e tempo de deslocação. Simula até **480 cidadãos representativos**, para proteger a performance no Android. A população total continua calculada por capacidade residencial; não existe ainda um simulador completo da vida individual de cada cidadão.
+- **Logística básica**: percursos de entrega entre fábricas e comércio, com indicador de entregas realizadas. Não existe stock persistente nem mercado externo detalhado.
+- **Tipos de rua**: estrada local, avenida, via rápida, sentido único com orientação ajustável (botão "Rodar direção" ou tecla R) e pontes nas células aquáticas. É possível converter ruas existentes pagando a diferença mínima de custo; sentido único afeta efetivamente as rotas.
+- **Redes por componentes** de distribuição elétrica e água/esgotos, com estradas como corredores técnicos e extensões por linhas elétricas e condutas. Zonas desconectadas podem ficar sem serviços; as estações de tratamento de esgotos têm capacidade separada.
+- **Finanças avançadas**: taxas residenciais/comerciais/industriais, salários e bem-estar simplificados, custos de estradas e infraestruturas, entregas, dívida, juros, amortizações, histórico de 48 meses.
+- **Vistas** de energia e água, além de trânsito e zonamento; painel de habitantes e deslocações; novos indicadores de esgotos e mobilidade no relatório urbano.
+
+### Compatibilidade
+
+Os saves antigos com chave `dungeons-metropole-v1` e `version:1` continuam aceites: `E.migrate` acrescenta os novos campos `p0`, sem mexer nas células e no dinheiro. Para evitar uma quebra súbita em cidades antigas, a contratação externa de tratamento de esgotos fornece capacidade de transição (com custo mensal) enquanto não for instalada uma estação. As cidades novas têm estação de tratamento inicial.
+
+A ferramenta **Demolir** remove também linhas, condutas e pontes. A importação JSON valida a versão e aplica a migração automaticamente. Exporta uma cópia de segurança antes de importares ou criares uma nova cidade.
+
+### Testes P0
+
+```bash
+node --check engine.js
+node --check p0.js
+node --check game.js
+node tests/smoke.cjs
+node tests/p0.cjs
+node tests/ui-smoke.cjs
+```
+
+**Limites honestos:** o tráfego é modelado por viagens de trabalho e entregas agregadas por mês, não por cada veículo com colisões ou semáforos; os cidadãos são uma amostra com rotina casa-trabalho, não uma simulação social contínua; as redes usam corredores e conectividade discretizada por parcela; as estradas continuam numa grelha isométrica sem curvas livres, viadutos a vários níveis ou nós complexos. São sistemas funcionais de uma **primeira fase**, não equivalentes à profundidade de Cities: Skylines.

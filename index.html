@@ -7,9 +7,10 @@
   <meta name="description" content="METRÓPOLE — constrói o teu horizonte. Um city builder isométrico com economia, serviços e uma cidade viva, no browser e Android."/>
   <title>METRÓPOLE — Constrói o teu horizonte</title>
   <link rel="icon" href="./assets/city.svg" type="image/svg+xml"/>
-  <link rel="stylesheet" href="./style.css?v=sssplus-7c536da"/>
+  <link rel="stylesheet" href="./style.css?v=3"/>
   <script src="./engine.js" defer></script>
-  <script src="./game.js?v=sssplus-7c536da" defer></script>
+  <script src="./p0.js?v=p0-release-01" defer></script>
+  <script src="./game.js?v=3" defer></script>
 </head>
 <body>
 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="icons-sprite" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -75,7 +76,7 @@
 
   <aside class="tools-panel" id="toolsPanel">
     <div class="tool-panel-heading"><div><span class="eyebrow">ATELIER URBANO / 01</span><h2>Construir <span class="lime">+</span></h2></div><button class="tool-collapse" data-action="toggleTools" aria-label="Fechar ferramentas"><svg><use href="#i-close"/></svg></button></div>
-    <div class="build-categories" aria-label="Categorias de construção"><button class="active" data-category="all" aria-pressed="true">Tudo</button><button data-category="zone" aria-pressed="false">Zonas</button><button data-category="service" aria-pressed="false">Serviços</button></div>
+    <div class="build-categories" aria-label="Categorias de construção"><button class="active" data-category="all" aria-pressed="true">Tudo</button><button data-category="zone" aria-pressed="false">Zonas</button><button data-category="service" aria-pressed="false">Serviços</button><button data-category="transport" aria-pressed="false">Vias</button><button data-category="network" aria-pressed="false">Redes</button></div>
     <div class="panel-caption"><span>DESENVOLVIMENTO URBANO</span><span>01</span></div>
     <div class="tool-grid">
       <button class="tool active" data-tool="inspect" data-group="all"><span class="tool-icon"><svg><use href="#i-pointer"/></svg></span><span class="tool-text">Explorar</span><small>Vista livre</small></button>
@@ -91,6 +92,15 @@
       <button class="tool" data-tool="police" data-group="service"><span class="tool-icon"><svg><use href="#i-shield"/></svg></span><span class="tool-text">Segurança</span><small>10 500 €</small></button>
       <button class="tool" data-tool="power" data-group="service"><span class="tool-icon"><svg><use href="#i-bolt"/></svg></span><span class="tool-text">Energia</span><small>14 500 €</small></button>
       <button class="tool" data-tool="water" data-group="service"><span class="tool-icon"><svg><use href="#i-water"/></svg></span><span class="tool-text">Água</span><small>9 800 €</small></button>
+      <div class="tool-section" data-group="transport">MOBILIDADE / P0 <span>03</span></div>
+      <button class="tool" data-tool="avenue" data-group="transport"><span class="tool-icon">▰</span><span class="tool-text">Avenida</span><small>380 €</small></button>
+      <button class="tool" data-tool="oneway" data-group="transport"><span class="tool-icon">➜</span><span class="tool-text">Sentido único</span><small>170 €</small></button>
+      <button class="tool" data-tool="highway" data-group="transport"><span class="tool-icon">≋</span><span class="tool-text">Via rápida</span><small>950 €</small></button>
+      <button class="tool" data-tool="bridge" data-group="transport"><span class="tool-icon">⌒</span><span class="tool-text">Ponte</span><small>1 800 €</small></button>
+      <div class="tool-section" data-group="network">INFRAESTRUTURAS / P0 <span>04</span></div>
+      <button class="tool" data-tool="powerline" data-group="network"><span class="tool-icon">ϟ</span><span class="tool-text">Linha elétrica</span><small>160 €</small></button>
+      <button class="tool" data-tool="waterpipe" data-group="network"><span class="tool-icon">◉</span><span class="tool-text">Conduta</span><small>130 €</small></button>
+      <button class="tool" data-tool="sewage" data-group="network"><span class="tool-icon">♒</span><span class="tool-text">Tratamento</span><small>11 700 €</small></button>
       <button class="tool danger" data-tool="bulldoze" data-group="all"><span class="tool-icon"><svg><use href="#i-demolish"/></svg></span><span class="tool-text">Demolir</span><small>140 €</small></button>
     </div>
     <div class="tool-help"><span class="help-bulb">✳</span><span id="toolInfo">Toca num edifício para ver detalhes. Arrasta para mover o mapa.</span></div>
@@ -108,6 +118,8 @@
     <div class="section-row"><span class="section-label">INFRAESTRUTURAS</span><span class="section-meta">CAPACIDADE</span></div>
     <div class="utility"><div class="utility-info"><span><svg><use href="#i-bolt"/></svg> Eletricidade</span><b id="powerText">0 / 0</b></div><div class="meter wide"><i id="powerBar"></i></div></div>
     <div class="utility"><div class="utility-info"><span><svg><use href="#i-water"/></svg> Abastecimento de água</span><b id="waterText">0 / 0</b></div><div class="meter wide"><i id="waterBar"></i></div></div>
+    <div class="utility"><div class="utility-info"><span>♒ Esgotos e tratamento</span><b id="sewageText">0 / 0</b></div><div class="meter wide"><i id="sewageBar"></i></div></div>
+    <div class="utility"><div class="utility-info"><span>⟲ Mobilidade e deslocações</span><b id="commuteText">—</b></div><div class="meter wide"><i id="commuteBar"></i></div></div>
     <div class="mini-metrics"><div><span>TRÂNSITO</span><strong id="traffic">0%</strong><small>Circulação</small></div><div><span>COBERTURA</span><strong id="coverage">0%</strong><small>Serviços</small></div><div><span>DESEMPREGO</span><strong id="unemployed">0%</strong><small>Mercado</small></div></div>
     <div class="hairline"></div>
     <div class="section-row"><span class="section-label">ORÇAMENTO MENSAL</span><button class="plain-btn" data-action="budget">Ver relatório <svg><use href="#i-chevron"/></svg></button></div>
@@ -119,15 +131,16 @@
     <div id="eventFeed" class="event-feed"></div>
   </section>
 
-  <div class="map-mode-panel" aria-label="Camadas do mapa"><span><svg><use href="#i-layers"/></svg> MAPA</span><button class="active" data-view="normal" aria-pressed="true">Cidade</button><button data-view="zoning" aria-pressed="false">Zonas</button><button data-view="traffic" aria-pressed="false">Trânsito</button></div>
+  <div class="map-mode-panel" aria-label="Camadas do mapa"><span><svg><use href="#i-layers"/></svg> MAPA</span><button class="active" data-view="normal" aria-pressed="true">Cidade</button><button data-view="zoning" aria-pressed="false">Zonas</button><button data-view="traffic" aria-pressed="false">Trânsito</button><button data-view="power" aria-pressed="false">Energia</button><button data-view="water" aria-pressed="false">Água</button></div>
   <div class="minimap-wrap"><div class="minimap-head"><span><i></i> VISÃO GERAL</span><span>36 × 36</span></div><canvas id="minimap" width="156" height="156" aria-label="Minimapa interativo. Toca para centrar."></canvas><span class="minimap-foot">NOVA AURORA · REGIÃO 01</span></div>
   <div class="map-controls"><button data-action="zoomIn" title="Aproximar" aria-label="Aproximar">+</button><button data-action="zoomOut" title="Afastar" aria-label="Afastar">−</button><button data-action="center" title="Centrar mapa" aria-label="Centrar mapa"><svg><use href="#i-target"/></svg></button></div>
   <div class="selection-panel hidden" id="selectionPanel" role="status"><button class="selection-close" data-action="closeSelection" aria-label="Fechar">×</button><span class="section-label">INSPETOR DE PARCELA / DETALHES</span><strong id="selectionTitle">Terreno</strong><p id="selectionDesc"></p><span id="selectionCoords"></span></div>
 
+  <div class="road-orientation hidden" id="roadOrientation"><span id="roadDirectionLabel">Sentido →</span><button data-action="rotateRoad">Rodar direção ↻</button></div>
   <div class="construction-status hidden" id="constructionStatus"><span class="build-status-icon" id="buildStatusIcon">+</span><div><small>MODO CONSTRUÇÃO</small><strong id="buildStatusName">Estradas</strong></div><span class="build-status-price" id="buildStatusCost">90 € / parcela</span><button data-action="cancelBuild" title="Sair da construção">CONCLUIR <svg><use href="#i-check"/></svg></button></div>
   <div class="tile-tooltip hidden" id="tileTooltip" aria-hidden="true"><b id="tileTooltipTitle">Terreno</b><small id="tileTooltipDesc">Selecionar parcela</small></div>
   <div class="milestone-banner hidden" id="milestoneBanner" role="status"><div class="milestone-emblem"><svg><use href="#i-star"/></svg></div><div><span>UM NOVO CAPÍTULO</span><strong id="milestoneTitle">Cidade em expansão</strong><p id="milestoneDescription">A tua cidade atingiu um novo marco.</p></div><button data-action="closeMilestone" aria-label="Fechar conquista"><svg><use href="#i-close"/></svg></button></div>
-  <div class="playbar"><div class="mode-indicator"><span class="pulse"></span><span id="statusText">CIDADE ATIVA</span><small id="dockDate">Abr 2026</small></div><div class="playbar-divider"></div><div class="speed-control"><button data-speed="0" title="Pausa" aria-label="Pausa">Ⅱ</button><button class="selected" data-speed="1" title="Velocidade normal" aria-label="Velocidade normal">▶</button><button data-speed="2" title="Velocidade dupla" aria-label="Velocidade dupla">▶▶</button><button data-speed="3" title="Velocidade tripla" aria-label="Velocidade tripla">▶▶▶</button></div><div class="playbar-divider"></div><button class="playbar-action" data-action="undo" title="Desfazer"><svg><use href="#i-undo"/></svg><span>Desfazer</span></button><button class="playbar-action" data-action="save" title="Guardar"><svg><use href="#i-save"/></svg><span>Guardar</span></button><button class="playbar-action" data-action="menu" title="Menu"><svg><use href="#i-menu"/></svg><span>Menu</span></button></div>
+  <div class="playbar"><div class="mode-indicator"><span class="pulse"></span><span id="statusText">CIDADE ATIVA</span><small id="dockDate">Abr 2026</small></div><div class="playbar-divider"></div><div class="speed-control"><button data-speed="0" title="Pausa" aria-label="Pausa">Ⅱ</button><button class="selected" data-speed="1" title="Velocidade normal" aria-label="Velocidade normal">▶</button><button data-speed="2" title="Velocidade dupla" aria-label="Velocidade dupla">▶▶</button><button data-speed="3" title="Velocidade tripla" aria-label="Velocidade tripla">▶▶▶</button></div><div class="playbar-divider"></div><button class="playbar-action" data-action="undo" title="Desfazer"><svg><use href="#i-undo"/></svg><span>Desfazer</span></button><button class="playbar-action" data-action="save" title="Guardar"><svg><use href="#i-save"/></svg><span>Guardar</span></button><button class="playbar-action" data-action="citizens" title="Habitantes e trajetos">♙ <span>Habitantes</span></button><button class="playbar-action" data-action="menu" title="Menu"><svg><use href="#i-menu"/></svg><span>Menu</span></button></div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="modal" class="modal-wrap hidden" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-top"><div><span class="brand-kicker">METRÓPOLE / COMANDO CENTRAL</span><h2 id="modalTitle">Centro de controlo</h2></div><button class="modal-x" data-action="closeModal" aria-label="Fechar">×</button></div><div id="modalContent"></div></div></div>
   <input type="file" id="importFile" accept="application/json,.json" hidden/>

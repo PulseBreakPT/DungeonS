@@ -8,19 +8,21 @@ if(!ctx){document.body.textContent='O browser não suporta Canvas 2D.';return;}
 const $=id=>document.getElementById(id),money=n=>Math.round(n).toLocaleString('pt-PT')+' €',fmt=n=>Math.round(n).toLocaleString('pt-PT');
 const escapeHtml=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let state;try{const saved=JSON.parse(localStorage.getItem(E.SAVE_KEY)||'null');state=E.validate(saved)?saved:E.create();}catch{state=E.create();}
+E.migrate(state);
 let metrics=E.analyze(state),tool='inspect',viewMode='normal',selected=null,hover=null,zoom=innerWidth<700?.88:1.01;
 let lightingMode='day',activeCategory='all',builderOpen=false,tipVisible=false,milestoneTimer=0;
 let cam={x:0,y:innerWidth<700?-15:-25},w=0,h=0,dpr=1;
 let dirty=true,painted=new Set(),undoStack=[],lastSim=performance.now(),lastFrame=0,simProgress=0,toastTimer=0;
 const pointers=new Map();let drag=null,pinch=null,hideStats=false;
-const toolsInfo={inspect:'Toca num edifício para ver detalhes. Arrasta para mover o mapa.',road:'Cria estradas ligadas à rede. Podes arrastar para construir.',res:'Marca terrenos residenciais junto às estradas.',com:'Marca comércio perto dos habitantes e das estradas.',ind:'Cria empregos industriais. Evita instalar junto às habitações.',park:'Os parques aumentam a felicidade das zonas próximas.',school:'Melhora os serviços dos bairros perto da escola.',clinic:'Hospitais melhoram o bem-estar da população.',fire:'Os bombeiros oferecem cobertura a bairros próximos.',police:'Esquadras aumentam a segurança dos bairros.',power:'Uma central fornece capacidade elétrica para toda a rede.',water:'A água é essencial para o crescimento da cidade.',bulldoze:'Demole construções. Atenção: a demolição é permanente.'};
+const toolsInfo={inspect:'Toca num edifício para ver detalhes. Arrasta para mover o mapa.',road:'Cria estradas ligadas à rede. Podes arrastar para construir.',res:'Marca terrenos residenciais junto às estradas.',com:'Marca comércio perto dos habitantes e das estradas.',ind:'Cria empregos industriais. Evita instalar junto às habitações.',park:'Os parques aumentam a felicidade das zonas próximas.',school:'Melhora os serviços dos bairros perto da escola.',clinic:'Hospitais melhoram o bem-estar da população.',fire:'Os bombeiros oferecem cobertura a bairros próximos.',police:'Esquadras aumentam a segurança dos bairros.',power:'Uma central fornece capacidade elétrica para toda a rede.',water:'A água é essencial para o crescimento da cidade.',sewage:'Trata esgotos em redes de condutas e estradas.',powerline:'Extensão da rede elétrica para bairros isolados.',waterpipe:'Estende a rede de água e esgotos para bairros isolados.',avenue:'Avenidas com mais velocidade e capacidade. Podes melhorar estradas existentes.',oneway:'Sentido único. Usa Rodar direção para definir a orientação.',highway:'Via rápida com elevada capacidade e velocidade.',bridge:'Constrói uma ponte apenas sobre água.',bulldoze:'Demole construções. Atenção: a demolição é permanente.'};
 function persist(){try{localStorage.setItem(E.SAVE_KEY,JSON.stringify(state));}catch{toast('Armazenamento cheio. Exporta o save.','error');}}
 function toast(msg,type='ok'){const el=$('toast');el.textContent=msg;el.className='toast show'+(type==='error'?' error':'');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.className='toast',2450);}
-const featureNames={inspect:'Explorar',road:'Estradas',res:'Residencial',com:'Comércio',ind:'Indústria',park:'Parques',school:'Escolas',clinic:'Hospitais',fire:'Bombeiros',police:'Segurança',power:'Energia',water:'Água',bulldoze:'Demolição'};
-function updateBuildHUD(){const el=$('constructionStatus');if(!el)return;el.classList.toggle('hidden',tool==='inspect');if(tool==='inspect')return;
+const featureNames={inspect:'Explorar',road:'Estradas',res:'Residencial',com:'Comércio',ind:'Indústria',park:'Parques',school:'Escolas',clinic:'Hospitais',fire:'Bombeiros',police:'Segurança',power:'Energia',water:'Água',sewage:'Esgotos',powerline:'Linha elétrica',waterpipe:'Conduta',avenue:'Avenida',oneway:'Sentido único',highway:'Via rápida',bridge:'Ponte',bulldoze:'Demolição'};
+function updateBuildHUD(){const el=$('constructionStatus');if(!el)return;el.classList.toggle('hidden',tool==='inspect');$('roadOrientation').classList.toggle('hidden',tool!=='oneway');if(tool==='inspect')return;
   $('buildStatusName').textContent=featureNames[tool]||tool;
   $('buildStatusCost').textContent=money(E.COST[tool]||0)+' / parcela';
   $('buildStatusIcon').textContent=tool==='bulldoze'?'×':tool==='road'?'⌁':'+';
+  $('roadOrientation').classList.toggle('hidden',tool!=='oneway');$('roadDirectionLabel').textContent='Sentido '+['←','↑','→','↓'][state.p0.roadDirection];
 }
 function setLight(mode){lightingMode=mode;$('lightLabel').textContent={day:'DIA',dusk:'CREPÚSCULO',night:'NOITE'}[mode];
   $('dayPart').innerHTML=`<svg><use href="#${mode==='night'?'i-moon':mode==='dusk'?'i-sunset':'i-sun'}"/></svg><span>${mode==='night'?'NOITE':mode==='dusk'?'PÔR DO SOL':'DIA'}</span>`;
@@ -32,6 +34,7 @@ function setCategory(cat){activeCategory=cat;document.querySelectorAll('[data-ca
 function toggleTools(){builderOpen=!builderOpen;document.body.classList.toggle('builder-open',builderOpen);}
 function updateMission(){let title='Faz a cidade crescer',info='Liga novos bairros às estradas para atrair habitantes.';
  if(!metrics.powered){title='Precisas de eletricidade';info='Aumenta a capacidade da rede para manter os bairros ativos.';}
+ else if(!metrics.sewageOk){title='Tratar os esgotos';info='Reforça as estações de tratamento e as condutas de água.';}
  else if(!metrics.watered){title='Garantir água para todos';info='Constrói uma estação de abastecimento antes da próxima expansão.';}
  else if(metrics.balance<0){title='Recuperar o orçamento';info='Equilibra os impostos e os custos dos serviços municipais.';}
  else if(metrics.happiness<55){title='Melhorar a qualidade de vida';info='Investe em parques, segurança, escolas e saúde.';}
@@ -54,6 +57,8 @@ $('cityHealthDesc').textContent=metrics.balance<0?'As despesas superam as receit
 $('healthBar').style.width=health+'%';
 for(const k of E.ZONES){$(k+'Bar').style.width=metrics.demand[k]+'%';$(k+'Pct').textContent=metrics.demand[k]+'%';}
 for(const [k,used,cap] of [['power',metrics.electricity,metrics.powerCap],['water',metrics.waterUse,metrics.waterCap]]){$(k+'Text').textContent=fmt(used)+' / '+fmt(cap);$(k+'Bar').style.width=(cap?Math.min(100,100*used/cap):100)+'%';$(k+'Bar').style.background=cap<used?'#ff8b86':'#e1c274';}
+$('sewageText').textContent=fmt(metrics.sewageUse)+' / '+fmt(metrics.sewageCap);$('sewageBar').style.width=(metrics.sewageCap?Math.min(100,100*metrics.sewageUse/metrics.sewageCap):100)+'%';$('sewageBar').style.background=metrics.sewageOk?'#85dda6':'#f58f8f';
+$('commuteText').textContent=metrics.commuters+' viagens · '+metrics.averageCommute+' min';$('commuteBar').style.width=Math.min(100,metrics.traffic)+'%';
 $('traffic').textContent=metrics.traffic+'%';$('coverage').textContent=metrics.coverage+'%';$('unemployed').textContent=(metrics.workers?Math.round(metrics.unemployed/metrics.workers*100):0)+'%';$('income').textContent='+'+money(metrics.income);$('expenses').textContent='−'+money(metrics.expenses);$('taxValue').textContent=state.tax+'%';$('statusText').textContent=state.speed===0?'EM PAUSA':'CIDADE ATIVA';
 document.querySelectorAll('[data-speed]').forEach(b=>b.classList.toggle('selected',Number(b.dataset.speed)===state.speed));
 $('dockDate').textContent=E.date(state);updateMission();
@@ -133,8 +138,13 @@ function drawService(x,y,k,tx,ty){
   if(k==='clinic'||k==='fire'||k==='police'||k==='school'){ctx.fillStyle=k==='fire'?'#ffded0':k==='clinic'?'#ef5e62':'#f9e7c5';ctx.font=`bold ${k==='clinic'?17:14}px 'Space Grotesk',sans-serif`;ctx.textAlign='center';ctx.fillText(k==='clinic'?'+':k==='fire'?'♨':k==='police'?'★':'▤',x,y-height*zoom-2*zoom);}
 }
 function drawRoad(x,y,tx,ty){
+  const cell=state.grid[E.idx(tx,ty)],kind=E.roadType(cell),paint={road:'#485761',avenue:'#344c62',oneway:'#4e526a',highway:'#384655',bridge:'#626a72'}[kind]||'#485761';
+  if(kind==='bridge'){diamond(x,y+7*zoom,33,17,'#416877');}
   diamond(x,y+2.5*zoom,32.4,16.2,'#5e746c');
-  diamond(x,y,31.3,15.5,'#485761','#6b8081');
+  diamond(x,y,31.3,15.5,paint,kind==='highway'?'#c5d0a5':'#6b8081');
+  if(kind==='oneway'&&zoom>.65){ctx.save();ctx.fillStyle='#ffe4aa';ctx.font=`bold ${Math.round(16*zoom)}px sans-serif`;ctx.textAlign='center';ctx.fillText(['←','↑','→','↓'][cell.direction??2],x,y+5*zoom);ctx.restore();}
+  if(kind==='avenue'||kind==='highway'){stroke({x:x-16*zoom,y:y+4*zoom},{x:x+16*zoom,y:y-4*zoom},kind==='highway'?'#f4dca5':'#a4baca',kind==='highway'?2.2:1.5);}
+
   const neighbors=E.neighbors(tx,ty).filter(([nx,ny])=>state.grid[E.idx(nx,ny)].k==='road');
   for(const [nx,ny] of neighbors){const pt=project(nx,ny);
     const a={x:x+(pt.x-x)*.12,y:y+(pt.y-y)*.12},b={x:x+(pt.x-x)*.44,y:y+(pt.y-y)*.44};
@@ -145,7 +155,7 @@ function drawRoad(x,y,tx,ty){
 }
 function drawTile(x,y,now){const c=state.grid[E.idx(x,y)];const p=project(x,y);if(p.x<-130||p.x>w+130||p.y<-230||p.y>h+130)return;
   const rnd=E.hash(x,y,7),water=c.t==='water';
-  if(water){
+  if(water && c.k!=='road'){
     diamond(p.x,p.y,32.2,16.2,rnd>.5?'#3c94a3':'#478f9d','rgba(137,214,217,.18)');
     if((x+y)%3===0){ctx.globalAlpha=.3;stroke({x:p.x-11*zoom,y:p.y+2*zoom},{x:p.x+3*zoom,y:p.y-5*zoom+Math.sin(now/1100+x)*1.3*zoom},'#d6f5ec',1);ctx.globalAlpha=1;}
     return;
@@ -168,26 +178,25 @@ function drawTile(x,y,now){const c=state.grid[E.idx(x,y)];const p=project(x,y);i
     if(c.lvl>0)drawHouse(p.x,p.y,c,x,y);
     else if(zoom>.65){ctx.fillStyle='rgba(248,255,240,.7)';ctx.font=`${Math.max(9,11*zoom)}px Manrope,sans-serif`;ctx.textAlign='center';ctx.fillText('＋',p.x,p.y+3*zoom);}
   }else if(E.SERVICES.includes(c.k))drawService(p.x,p.y,c.k,x,y);
-  if(viewMode==='traffic' && c.k==='road')diamond(p.x,p.y,31,15,metrics.traffic>70?'rgba(234,97,84,.3)':metrics.traffic>40?'rgba(243,179,103,.27)':'rgba(166,240,135,.20)');
+  if(c.powerLine){stroke({x:p.x-14*zoom,y:p.y+5*zoom},{x:p.x+13*zoom,y:p.y-6*zoom},'#f5dd77',2.4);diamond(p.x,p.y,4,2,'#ffeb99');}
+  if(c.waterPipe){stroke({x:p.x-13*zoom,y:p.y-5*zoom},{x:p.x+13*zoom,y:p.y+5*zoom},'#73d6f1',2.6);diamond(p.x,p.y,3,2,'#b9eaff');}
+  if(viewMode==='power'||viewMode==='water'){const z=metrics.utilityCoverage?.zones?.[E.idx(x,y)];if(z){const ok=viewMode==='power'?z.powered:z.watered&&z.sewage;diamond(p.x,p.y,29,14,ok?'rgba(108,236,155,.2)':'rgba(244,100,97,.45)',ok?'#9df4b0':'#ff6a6a');}}
+  if(viewMode==='traffic' && c.k==='road'){const value=metrics.congestionByRoad?.[E.idx(x,y)]||0;diamond(p.x,p.y,31,15,value>110?'rgba(240,63,71,.75)':value>65?'rgba(249,162,71,.62)':'rgba(125,231,133,.28)');}
   if((hover&&hover.x===x&&hover.y===y)||(selected&&selected.x===x&&selected.y===y)){
     diamond(p.x,p.y,32,16,hover&&hover.x===x&&hover.y===y?'rgba(251,255,233,.20)':'rgba(201,244,124,.23)',viewMode==='normal'?'#edffb7':'#ffffff');
   }
 }
-function drawTraffic(now){const active=metrics.roadCount;if(!active)return;const cars=Math.min(28,Math.floor((metrics.population+metrics.jobs)/55)+3);
-  for(let i=0;i<cars;i++){
-    let x=7+Math.floor(E.hash(i,2,33)*22),y=12+Math.floor(E.hash(i,8,54)*13),hop=0;
-    // Use existing roads only, with local routes so visual traffic follows streets.
-    let xRoad=18,yRoad=18;
-    if(i%4===0){xRoad=18;yRoad=7+Math.floor(E.hash(i,8)*21);}else if(i%4===1){xRoad=7+Math.floor(E.hash(i,8)*21);yRoad=18;}else if(i%4===2){xRoad=12;yRoad=12+Math.floor(E.hash(i,8)*12);}else{xRoad=12+Math.floor(E.hash(i,8)*12);yRoad=24;}
-    if(state.grid[E.idx(xRoad,yRoad)].k!=='road')continue;
-    const options=E.neighbors(xRoad,yRoad).filter(([nx,ny])=>state.grid[E.idx(nx,ny)].k==='road');if(!options.length)continue;
-    const next=options[Math.floor(E.hash(i,1,14)*options.length)];const t=(now/1000*(0.5+metrics.traffic/270)+i*.23)%1;
-    const a=project(xRoad,yRoad),b=project(next[0],next[1]);const px=a.x+(b.x-a.x)*t,py=a.y+(b.y-a.y)*t;
-    ctx.fillStyle='rgba(17,31,37,.27)';ctx.beginPath();ctx.ellipse(px+1.6*zoom,py+2.7*zoom,4.4*zoom,2.4*zoom,0,0,Math.PI*2);ctx.fill();
-    const palette=['#f5f0d9','#f2c17d','#a9dbd7','#e68d7a','#f0f2e5'];
-    ctx.fillStyle=palette[i%palette.length];ctx.beginPath();ctx.ellipse(px,py,3.5*zoom,2.1*zoom,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#476674';ctx.fillRect(px-1*zoom,py-1*zoom,2*zoom,1.3*zoom);
-  }
+function drawTraffic(now){
+ const agents=metrics.trafficAgents||[];if(!agents.length)return;
+ for(const agent of agents){const route=agent.route;if(!route||route.length<2)continue;
+  const duration=(agent.kind==='freight'?3500:2300)*(1+metrics.traffic*.006);const progress=((now+agent.id*233)%duration)/duration*(route.length-1);
+  const segment=Math.min(route.length-2,Math.floor(progress)),t=progress-segment;
+  const a=route[segment],b=route[segment+1],p=project(a%E.N,Math.floor(a/E.N)),q=project(b%E.N,Math.floor(b/E.N));
+  const px=p.x+(q.x-p.x)*t,py=p.y+(q.y-p.y)*t;
+  if(px<-20||px>w+20||py<-20||py>h+20)continue;
+  ctx.fillStyle='rgba(17,31,37,.32)';ctx.beginPath();ctx.ellipse(px+zoom,py+2.3*zoom,4.5*zoom,2.3*zoom,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=agent.kind==='freight'?'#f2c17d':['#f7f0d6','#9ee5ce','#e59993','#dce6fc'][agent.id%4];ctx.beginPath();ctx.ellipse(px,py,(agent.kind==='freight'?5:3.4)*zoom,2*zoom,0,0,Math.PI*2);ctx.fill();
+ }
 }
 function paintLighting(now){
  if(lightingMode==='day')return;
@@ -223,7 +232,7 @@ function drawMinimap(){
   mctx.clearRect(0,0,mini.width,mini.height);
   for(let y=0;y<E.N;y++)for(let x=0;x<E.N;x++){
     const cell=state.grid[E.idx(x,y)];
-    mctx.fillStyle=cell.t==='water'?'#388d9d':({road:'#4c5d62',res:'#a3c991',com:'#83b5d0',ind:'#d3ac7e',park:'#3d925e',school:'#e2c79a',clinic:'#e9dada',fire:'#e78f83',police:'#9cacc8',power:'#767e76',water:'#65c7b8'}[cell.k]||'#77a17f');
+    mctx.fillStyle=cell.t==='water'?'#388d9d':({road:'#4c5d62',res:'#a3c991',com:'#83b5d0',ind:'#d3ac7e',park:'#3d925e',school:'#e2c79a',clinic:'#e9dada',fire:'#e78f83',police:'#9cacc8',power:'#767e76',water:'#65c7b8',sewage:'#6aaeb4'}[cell.k]||'#77a17f');
     mctx.fillRect(x*scale,y*scale,Math.ceil(scale),Math.ceil(scale));
   }
   const center=unproject(w/2,h/2);mctx.strokeStyle='#e9ffb4';mctx.lineWidth=1.8;
@@ -243,7 +252,7 @@ function updatePointerTip(p,t){const tooltip=$('tileTooltip');if(!tooltip)return
 }
 function inspect(x,y,toastOn=false){if(!E.inside(x,y))return;selected={x,y};const c=state.grid[E.idx(x,y)];const name=c.t==='water'?'Água':E.LABELS[c.k]||c.k;
   $('selectionPanel').classList.remove('hidden');$('selectionTitle').textContent=name;
-  let desc=c.t==='water'?'Zona aquática protegida. Não é possível construir aqui.':c.k==='empty'?'Este terreno está livre. Escolhe uma ferramenta de construção para o desenvolver.':c.k==='road'?'Estrada municipal. Liga edifícios e bairros à rede viária.':E.ZONES.includes(c.k)?`Zona ${name.toLowerCase()} · ${c.lvl?'edifício de nível '+c.lvl:'à espera de desenvolvimento'}. ${E.access(state,x,y,metrics.roads)?'Tem acesso à estrada.':'Sem acesso à estrada ligada à cidade.'}`:`Serviço público: ${name}. ${E.access(state,x,y,metrics.roads)?'Ligado à rede viária.':'Sem acesso à rede viária.'}`;
+  let desc=c.t==='water'?'Zona aquática protegida. Não é possível construir aqui.':c.k==='empty'?'Este terreno está livre. Escolhe uma ferramenta de construção para o desenvolver.':c.k==='road'?`Via ${E.LABELS[c.roadType]||'local'} · capacidade ${E.roadCapacity[E.roadType(c)]||28} veículos por ciclo. Congestão: ${metrics.congestionByRoad?.[E.idx(x,y)]||0}%.`:E.ZONES.includes(c.k)?`Zona ${name.toLowerCase()} · ${c.lvl?'edifício de nível '+c.lvl:'à espera de desenvolvimento'}. ${E.access(state,x,y,metrics.roads)?'Tem acesso à estrada.':'Sem acesso à estrada ligada à cidade.'}`:`Serviço público: ${name}. ${E.access(state,x,y,metrics.roads)?'Ligado à rede viária.':'Sem acesso à rede viária.'}`;
   $('selectionDesc').textContent=desc;$('selectionCoords').textContent=`SETOR ${String(x+1).padStart(2,'0')} · ${String(y+1).padStart(2,'0')}`;dirty=true;
 }
 function applyAt(x,y){if(!E.inside(x,y)||tool==='inspect')return;const key=E.idx(x,y);if(painted.has(key))return;painted.add(key);
@@ -280,20 +289,25 @@ function closeModal(){$('modal').classList.add('hidden');}
 function modal(title,html){$('modalTitle').textContent=title;$('modalContent').innerHTML=html;$('modal').classList.remove('hidden');}
 function openMenu(){modal('Centro de controlo',`<p>Constrói a cidade ao teu ritmo. Os dados são guardados automaticamente neste browser.</p><div class="action-list"><button data-action="save">Guardar agora</button><button data-action="export">Exportar cidade</button><button data-action="import">Importar cidade</button><button data-action="help">Como jogar</button><button data-action="budget">Orçamento</button><button data-action="screenshot">Capturar imagem</button><button class="danger" data-action="newGame">Nova cidade</button><button data-action="closeModal">Voltar ao jogo</button></div><p>METRÓPOLE é um jogo experimental independente de construção de cidades. Funciona offline após carregamento, sem contas nem pagamentos.</p>`);}
 function openBudget(){modal('Gestão municipal',`<p>O orçamento é atualizado a cada mês da simulação. Ajusta o imposto na barra lateral.</p><div class="modal-rows">${[
-['Tesouraria',money(state.money)],['Receita fiscal mensal',money(metrics.income)],['Despesas mensais',money(metrics.expenses)],['Saldo mensal',(metrics.balance>=0?'+':'')+money(metrics.balance)],['Taxa municipal',state.tax+'%'],['População',fmt(metrics.population)],['Empregos',fmt(metrics.jobs)],['Desemprego',fmt(metrics.unemployed)],['Felicidade',metrics.happiness+'%'],['Valor médio do terreno',metrics.landValue+'/100'],['Estradas',fmt(metrics.roadCount)],['Zonas ligadas às estradas',fmt(metrics.connectedZoned)]].map(([a,b])=>`<div class="modal-row"><span>${a}</span><b>${b}</b></div>`).join('')}</div>`);}
+['Tesouraria',money(state.money)],['Receita fiscal mensal',money(metrics.income)],['Despesas mensais',money(metrics.expenses)],['Saldo mensal',(metrics.balance>=0?'+':'')+money(metrics.balance)],['Taxa municipal',state.tax+'%'],['População',fmt(metrics.population)],['Empregos',fmt(metrics.jobs)],['Desemprego',fmt(metrics.unemployed)],['Felicidade',metrics.happiness+'%'],['Valor médio do terreno',metrics.landValue+'/100'],['Estradas',fmt(metrics.roadCount)],['Zonas ligadas às estradas',fmt(metrics.connectedZoned)],['Tratamento de esgotos',fmt(metrics.sewageUse)+' / '+fmt(metrics.sewageCap)],['Tempo médio deslocação',metrics.averageCommute+' min'],['Viagens com rota válida',fmt(metrics.commuters)],['Entregas industriais',fmt(metrics.deliveries)],['Dívida municipal',money(metrics.debt)]].map(([a,b])=>`<div class="modal-row"><span>${a}</span><b>${b}</b></div>`).join('')}</div><h3>Finanças avançadas</h3><p>Impostos sectoriais e dívida municipal. A prestação e os juros são cobrados mensalmente.</p><div class="action-list">${['res','com','ind'].map(k=>`<div class="modal-row"><span>${{res:'Residencial',com:'Comércio',ind:'Indústria'}[k]} ${state.p0.fiscal.zoneTax[k]}%</span><span><button data-action="taxZone:${k}:-1">−</button> <button data-action="taxZone:${k}:1">+</button></span></div>`).join('')}<button data-action="borrow">Contrair empréstimo +25 000 €</button><button data-action="repay">Amortizar dívida −10 000 €</button></div><h3>Histórico financeiro</h3><div class="modal-rows">${state.p0.fiscal.history.slice(-8).reverse().map(h=>`<div class="modal-row"><span>${escapeHtml(h.date)}</span><b>${money(h.balance)}</b></div>`).join('')||'<p>Os primeiros dados aparecem após um mês.</p>'}</div>`);}
+function openCitizens(){const people=state.p0.citizens;modal('Vida na cidade',`<p>${metrics.simulatedCitizens} habitantes simulados individualmente (amostragem até 480), ${metrics.commuters} viagens com rota e ${metrics.unreachableTrips} trajetos sem ligação. Tempo médio: ${metrics.averageCommute} minutos.</p><div class="modal-rows">${people.slice(0,30).map(c=>`<div class="modal-row"><span>${escapeHtml(c.name)} · ${c.age} anos<br><small>${escapeHtml(c.role)} · ${c.commute} min</small></span><b>${money(c.income)}</b></div>`).join('')}</div>`);}
 function openHelp(){modal('Como jogar',`<p><b>1.</b> Seleciona <b>Estradas</b> e desenha uma ligação a partir das vias existentes.</p><p><b>2.</b> Pinta zonas <b>Residenciais</b>, <b>Comerciais</b> e <b>Industriais</b> junto às estradas. Os edifícios aparecem e crescem ao longo dos meses.</p><p><b>3.</b> Expande eletricidade e água quando a procura ultrapassar a capacidade. Coloca parques, escolas, hospitais, polícia e bombeiros perto dos bairros.</p><p><b>4.</b> Equilibra impostos, serviços e emprego para manter habitantes satisfeitos e a tesouraria positiva.</p><h3>Controlos</h3><p><b>Telemóvel:</b> toca para construir, arrasta para pintar; escolhe Explorar para deslocar o mapa; usa dois dedos para fazer zoom.</p><p><b>Computador:</b> usa a roda do rato para zoom, arrasta para mover o mapa no modo Explorar, teclas 1–9 para ferramentas, espaço para pausa e Ctrl+Z para desfazer.</p><p>O progresso é guardado automaticamente apenas neste browser. Exporta o ficheiro JSON para o transferires para outro dispositivo.</p>`);}
-function setView(mode){if(!['normal','zoning','traffic'].includes(mode))return;viewMode=mode;
+function setView(mode){if(!['normal','zoning','traffic','power','water'].includes(mode))return;viewMode=mode;
   document.querySelectorAll('[data-view]').forEach(b=>{b.classList.toggle('active',b.dataset.view===mode);b.setAttribute('aria-pressed',String(b.dataset.view===mode));});dirty=true;
 }
-function act(a){switch(a){case 'toggleTools':toggleTools();return;
+function act(a){if(a.startsWith('taxZone:')){const [,zone,step]=a.split(':');E.setZoneTax(state,zone,state.p0.fiscal.zoneTax[zone]+Number(step));refresh();persist();openBudget();return;}switch(a){case 'toggleTools':toggleTools();return;
 case 'cycleLight':{const order=['day','dusk','night'];setLight(order[(order.indexOf(lightingMode)+1)%3]);return;}
 case 'cancelBuild':setTool('inspect');return;
+case 'rotateRoad':E.rotateDirection(state);updateBuildHUD();persist();return;
+case 'borrow':{const r=E.borrow(state);toast(r.ok?'Empréstimo recebido.':r.reason,r.ok?'ok':'error');refresh();persist();openBudget();return;}
+case 'repay':{const r=E.repay(state);toast(r.ok?'Dívida amortizada.':r.reason,r.ok?'ok':'error');refresh();persist();openBudget();return;}
+case 'citizens':openCitizens();return;
 case 'closeMilestone':$('milestoneBanner').classList.add('hidden');return;
 case 'toggleStats':hideStats=!hideStats;$('rightPanel').classList.toggle('open',hideStats);return;
 case 'closeSelection':selected=null;$('selectionPanel').classList.add('hidden');dirty=true;return;
 case 'zoomIn':zoom=Math.min(2.35,zoom*1.2);drawMinimap();dirty=true;return;case 'zoomOut':zoom=Math.max(.48,zoom/1.2);drawMinimap();dirty=true;return;
 case 'center':cam={x:0,y:innerWidth<700?-15:-25};zoom=innerWidth<700?.93:1.03;drawMinimap();dirty=true;return;
-case 'undo':{const u=undoStack.pop();if(!u){toast('Nada para desfazer.');return;}state.grid[E.idx(u.x,u.y)]=u.cell;state.money=u.money;state.totalBuilt=u.totalBuilt;refresh();persist();toast('Última construção desfeita.');return;}
+case 'undo':{const u=undoStack.pop();if(!u){toast('Nada para desfazer.');return;}state.grid[E.idx(u.x,u.y)]=u.cell;state.money=u.money;state.totalBuilt=u.totalBuilt;state.p0.revision=u.revision+1;refresh();persist();toast('Última construção desfeita.');return;}
 case 'save':persist();toast('Cidade guardada neste dispositivo.');return;
 case 'menu':openMenu();return;case 'closeModal':closeModal();return;
 case 'taxDown':state.tax=Math.max(4,state.tax-1);refresh();persist();return;
@@ -304,8 +318,8 @@ case 'rename':{const name=prompt('Nome da cidade:',state.name);if(name&&name.tri
 case 'screenshot':{const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download='metropole-cidade.png';a.click();return;}
 }}
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.category){setCategory(b.dataset.category);return;}if(b.dataset.tool){setTool(b.dataset.tool);return;}if(b.dataset.view){setView(b.dataset.view);return;}if(b.dataset.speed!==undefined){setSpeed(Number(b.dataset.speed));return;}if(b.dataset.action)act(b.dataset.action);});
-$('importFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!E.validate(data))throw new Error('Save incompatível ou inválido.');if(!confirm('Importar esta cidade e substituir a cidade atual?'))return;state=data;state.tax=Math.max(4,Math.min(20,Math.round(state.tax)));state.speed=[0,1,2,3].includes(state.speed)?state.speed:1;state.events=Array.isArray(state.events)?state.events:[];state.milestones=Array.isArray(state.milestones)?state.milestones:[];undoStack=[];selected=null;$('selectionPanel').classList.add('hidden');refresh();persist();closeModal();toast('Cidade importada.');}catch(err){toast(err.message||'Erro ao importar.','error');}finally{e.target.value='';}});
-document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;if(e.key==='Escape'){closeModal();$('rightPanel').classList.remove('open');hideStats=false;setTool('inspect');return;}if(e.key===' '){e.preventDefault();setSpeed(state.speed?0:1);return;}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();act('undo');return;}const keys=['inspect','road','res','com','ind','park','school','clinic','bulldoze'];const n=Number(e.key);if(n>=1&&n<=9)setTool(keys[n-1]);});
+$('importFile').addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!E.validate(data))throw new Error('Save incompatível ou inválido.');if(!confirm('Importar esta cidade e substituir a cidade atual?'))return;state=E.migrate(data);state.tax=Math.max(4,Math.min(20,Math.round(state.tax)));state.speed=[0,1,2,3].includes(state.speed)?state.speed:1;state.events=Array.isArray(state.events)?state.events:[];state.milestones=Array.isArray(state.milestones)?state.milestones:[];undoStack=[];selected=null;$('selectionPanel').classList.add('hidden');refresh();persist();closeModal();toast('Cidade importada.');}catch(err){toast(err.message||'Erro ao importar.','error');}finally{e.target.value='';}});
+document.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;if(e.key.toLowerCase()==='r'&&tool==='oneway'){act('rotateRoad');return;}if(e.key==='Escape'){closeModal();$('rightPanel').classList.remove('open');hideStats=false;setTool('inspect');return;}if(e.key===' '){e.preventDefault();setSpeed(state.speed?0:1);return;}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();act('undo');return;}const keys=['inspect','road','res','com','ind','park','school','clinic','bulldoze'];const n=Number(e.key);if(n>=1&&n<=9)setTool(keys[n-1]);});
 function frame(now){requestAnimationFrame(frame);if(document.hidden)return;const dt=Math.min(100,now-lastSim);lastSim=now;
   if(state.speed>0){simProgress+=dt*state.speed;while(simProgress>=4800){const completed=state.milestones?.length||0;E.tick(state);simProgress-=4800;refresh();persist();if((state.milestones?.length||0)>completed)showMilestone(state.events?.[0]);}}
   if(now-lastFrame>45){draw(now);lastFrame=now;dirty=false;}

@@ -156,3 +156,11 @@ body.builder-open .tool-section{display:none}
 /* Final layout alignment */
 .world-caption{display:none}
 @media(max-width:740px){.mission-card{bottom:max(180px,calc(env(safe-area-inset-bottom) + 174px))}}
+
+/* P0 systems: contextual orientation control, infrastructure overlay and modal finance controls. */
+.road-orientation{position:absolute;z-index:10;left:50%;bottom:130px;transform:translateX(-50%);display:flex;align-items:center;gap:14px;border:1px solid rgba(198,242,121,.62);background:rgba(12,22,29,.96);box-shadow:0 12px 34px rgba(3,14,20,.42);color:#e6f6d5;padding:10px 13px;border-radius:12px;font:800 11px Manrope,sans-serif;white-space:nowrap}
+.road-orientation.hidden{display:none!important}.road-orientation button{background:var(--lime);color:#13221a;border:0;border-radius:8px;padding:10px 13px;font:800 11px Manrope,sans-serif}
+.tool-grid .tool[data-group="transport"] .tool-icon{color:#c3d8fa}.tool-grid .tool[data-group="network"] .tool-icon{color:#86dcfa}
+.modal-row button{min-width:34px;min-height:34px;background:rgba(182,221,180,.1);color:var(--lime);border:1px solid rgba(189,230,188,.3);border-radius:7px;margin-left:3px;font-weight:800}
+.modal-card .action-list button{min-height:40px}
+@media(max-width:740px){.map-mode-panel{max-width:calc(100% - 18px);overflow-x:auto;scrollbar-width:none}.map-mode-panel button{flex:none;padding:8px 9px;font-size:9px}.playbar{overflow-x:auto;justify-content:space-between;scrollbar-width:none}.road-orientation{bottom:max(187px,calc(env(safe-area-inset-bottom) + 178px));max-width:calc(100% - 24px)}body.builder-open .road-orientation{bottom:max(245px,calc(env(safe-area-inset-bottom) + 236px))}.road-orientation button{min-height:42px}}

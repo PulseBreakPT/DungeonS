@@ -1,6 +1,6 @@
 /* METRÓPOLE Director Edition UI regression suite — no dependencies. */
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const C=require('../engine.js');
+const C=require('../p0.js');
 const canvasCtx=new Proxy({
  createLinearGradient(){return {addColorStop(){}}},
  measureText(text){return {width:text.length*7}}
@@ -36,3 +36,6 @@ for(const category of ['all','zone','service'])assert.ok(html.includes(`data-cat
 for(const view of ['normal','zoning','traffic'])assert.ok(html.includes(`data-view="${view}"`),'Missing map layer: '+view);
 assert.ok(html.includes('viewport-fit=cover')&&html.includes('tool-grid'));
 console.log('PASS: game bootstrap, city stats, day/dusk/night, builder tools, HUD toggles, all overlays and first isometric frame.');
+
+const htmlP0=fs.readFileSync('index.html','utf8');for(const id of ['roadOrientation','sewageBar','commuteText'])assert.ok(htmlP0.includes('id="'+id+'"'));for(const feature of ['p0.js','data-tool="avenue"','data-tool="oneway"','data-tool="highway"','data-tool="bridge"','data-tool="powerline"','data-tool="waterpipe"','data-tool="sewage"','data-view="power"','data-view="water"','data-action="citizens"'])assert.ok(htmlP0.includes(feature),'missing '+feature);
+console.log('PASS: P0 HTML controls and script registration.');

@@ -1,0 +1,70 @@
+'use strict';
+const assert=require('node:assert/strict');
+const E=require('../p0.js');
+const s=E.create(),old=JSON.parse(JSON.stringify(s));
+assert.equal(E.P0_VERSION,2);
+assert.equal(s.version,1,'old save version preserved');
+assert.equal(E.validate(s),true);
+let a=E.analyze(s);
+assert.ok(a.simulatedCitizens>=100&&s.p0.citizens.every(c=>c.age>0&&c.name&&Number.isInteger(c.home)));
+assert.ok(a.commuters>0&&a.deliveries>0,'commuters and freight actually routed');
+assert.ok(a.trafficAgents.every(v=>v.route.every(i=>s.grid[i].k==='road')),'cars stay on routes');
+assert.ok(a.balance>=0,'starter city should be viable');
+assert.ok(a.sewageOk&&a.powered&&a.watered);
+assert.equal(a.congestionByRoad.length,1296);
+assert.ok(a.commuters<=a.simulatedCitizens);
+const baseMoney=s.money;
+assert.equal(E.build(s,2,2,'avenue').ok,true);
+assert.equal(E.roadType(s.grid[E.idx(2,2)]),'avenue');
+assert.equal(E.build(s,2,2,'highway').ok,true,'road type upgrade');
+assert.equal(E.roadType(s.grid[E.idx(2,2)]),'highway');
+assert.equal(E.build(s,2,2,'bulldoze').ok,true);
+assert.equal(s.grid[E.idx(2,2)].k,'empty');
+const waterIndex=s.grid.findIndex(c=>c.t==='water');
+assert.ok(waterIndex>=0);
+assert.equal(E.build(s,waterIndex%36,Math.floor(waterIndex/36),'bridge').ok,true);
+assert.equal(s.grid[waterIndex].roadType,'bridge');
+assert.equal(E.build(s,waterIndex%36,Math.floor(waterIndex/36),'bulldoze').ok,true,'can demolish bridges');
+assert.equal(E.build(s,3,3,'powerline').ok,true);
+assert.equal(E.build(s,3,3,'waterpipe').ok,true);
+assert.equal(s.grid[E.idx(3,3)].powerLine,true);
+assert.equal(s.grid[E.idx(3,3)].waterPipe,true);
+assert.equal(E.build(s,3,3,'powerline').ok,false);
+// Directed graph: southbound one-way cannot be traversed northbound.
+const t=E.create();for(const c of t.grid){c.k='empty';c.lvl=0;c.t='land';c.powerLine=false;c.waterPipe=false;}
+t.p0.revision++;
+for(let x=4;x<=7;x++){const c=t.grid[E.idx(x,5)];c.k='road';c.roadType='road';}
+let from=E.idx(4,5),to=E.idx(7,5);
+assert.equal(E.shortestRoute(t,from,to).length,4);
+const one=t.grid[E.idx(5,5)];one.roadType='oneway';one.direction=2;t.p0.revision++;
+assert.equal(E.shortestRoute(t,from,to).length,4);
+assert.equal(E.shortestRoute(t,to,from),null);
+// Separate power-water grids: a road disconnected from the generator is not supplied.
+const iso=E.create();const ix=2,iy=3,j=E.idx(ix,iy);
+iso.grid[j]={k:'res',t:'land',lvl:1,age:5};
+const ij=E.idx(ix+1,iy);iso.grid[ij]={k:'road',t:'land',lvl:0,age:0};iso.p0.revision++;
+let na=E.analyze(iso);
+assert.ok(na.disconnectedBuildings>=1,'isolated zoned plot has no utilities');
+const beforePop=na.population;
+assert.equal(E.build(iso,2,2,'powerline').ok,true);
+assert.equal(E.build(iso,2,2,'waterpipe').ok,true);
+assert.equal(E.analyze(iso).population,beforePop);
+// Save migration is idempotent and does not alter original cells, money, or old key.
+const legacy=JSON.parse(JSON.stringify(old));delete legacy.p0;
+const before=JSON.stringify(legacy.grid),cash=legacy.money;
+assert.equal(E.validate(legacy),true);E.migrate(legacy);E.migrate(legacy);
+assert.equal(JSON.stringify(legacy.grid),before);assert.equal(legacy.money,cash);
+assert.equal(E.validate(legacy),true);
+assert.equal(legacy.p0.legacySewage,true);
+assert.ok(E.analyze(legacy).sewageCap>=700);
+// Borrow, repay and source-specific rates are both consequential and bounded.
+assert.equal(E.borrow(s,25000).ok,true);assert.ok(s.p0.fiscal.debt>=25000);
+assert.equal(E.borrow(s,250000).ok,false);
+const debt=s.p0.fiscal.debt;assert.equal(E.repay(s,10000).ok,true);
+assert.equal(s.p0.fiscal.debt,debt-10000);
+assert.equal(E.setZoneTax(s,'com',22),true);assert.equal(s.p0.fiscal.zoneTax.com,22);
+assert.equal(E.setZoneTax(s,'xx',15),false);
+let month0=s.month;E.tick(s);assert.equal(s.month,month0+1);assert.equal(s.p0.fiscal.history.length,1);
+assert.ok(Number.isFinite(E.analyze(s).balance));assert.ok(s.money>0&&s.money!==baseMoney);
+assert.equal(E.validate(JSON.parse(JSON.stringify(s))),true);
+console.log('PASS P0: road routing / directions / traffic agents / household simulation / utility networks / bridge / economy / loan / legacy save / tick');
