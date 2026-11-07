@@ -45,7 +45,7 @@ node tests/smoke.cjs
 node tests/ui-smoke.cjs
 ```
 
-Basta servir esta pasta com um servidor de ficheiros estáticos. Não precisa de NPM, Vite, motor 3D, backend ou base de dados.
+Basta servir esta pasta com um servidor de ficheiros estáticos. O Canvas 2D não precisa de NPM, backend ou base de dados. O modo 3D usa Three.js por CDN e só é ativado num browser com WebGL e acesso inicial à biblioteca.
 
 ## Limites atuais
 
