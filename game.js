@@ -1,4 +1,4 @@
-/* METRÓPOLE — responsive isometric city builder. No dependencies, no network access required. */
+/* METRÓPOLE — static city simulation with optional CDN-backed WebGL and offline Canvas 2D fallback. */
 (()=>{
 'use strict';
 const E=window.CityEngine;
