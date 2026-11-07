@@ -33,11 +33,16 @@ jobs:
           node tests/p01.cjs
           node tests/graphics.cjs
           node tests/ui-smoke.cjs
-      - name: Install Playwright Chromium for browser integration
-        run: |
-          npm install --no-save --no-package-lock playwright@1.55.0
-          npx playwright install --with-deps chromium
+      - name: Install Chrome for browser integration
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+      - name: Install Playwright automation library
+        run: npm install --no-save --no-package-lock playwright-core@1.55.0
       - name: Browser integration and screenshot
+        env:
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
         run: node tests/graphics-browser.cjs
       - name: Upload browser screenshot
         if: always()
