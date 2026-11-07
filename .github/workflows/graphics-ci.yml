@@ -1,0 +1,35 @@
+name: P2 WebGL graphics validation
+
+on:
+  push:
+    branches: [feat/graphics-p2-webgl-city]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  graphics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks for simulation and graphics
+        run: |
+          node --check engine.js
+          node --check p0.js
+          node --check game.js
+          node --check graphics-model.js
+          node --check graphics3d.mjs
+      - name: Deterministic simulation and visual geometry
+        run: |
+          node tests/smoke.cjs
+          node tests/p0.cjs
+          node tests/p01.cjs
+          node tests/graphics.cjs
+          node tests/ui-smoke.cjs
