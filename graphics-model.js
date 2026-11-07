@@ -130,6 +130,7 @@
       put('shadow',x+.1,.01,y+.1,.84,.014,.81,'#1c342c');
       put('walls',x,h/2+.06,y,.83,h,.78,color);
       put('roof',x,h+.075,y,.86,.06,.80,k==='fire'?'#a84d47':'#5c7478');
+      if(detail===0)return;
       if(k==='power'||k==='sewage'){
         put('metal',x-.20,h+.3,y-.13,.16,.55,.16,'#788287');
         put('metal',x+.18,h+.2,y+.12,.20,.36,.17,'#9aa2a0');
