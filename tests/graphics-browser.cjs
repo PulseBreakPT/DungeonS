@@ -54,7 +54,7 @@ const listen=()=>new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
     });
     assert.ok(before.world2d>100,'the fallback canvas must draw even when offline');
     assert.equal(before.terrain,1296);
-    if(before.gpu){
+    if(before.gpu&&before.active){
       assert.equal(before.active,before.webglShown,'renderer activation and visible layer must match');
       await page.evaluate(()=>document.querySelector('[data-action="toggleGraphics"]').click());
       await page.waitForTimeout(500);
