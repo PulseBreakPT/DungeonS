@@ -49,7 +49,24 @@ function migrate(s){
 }
 E.migrate=migrate;
 E.P0_VERSION=2;
-E.validate=function(s){return base.validate(s) && (!s.p0 || (typeof s.p0==='object'&&(!s.p0.citizens||Array.isArray(s.p0.citizens))));};
+// Accept the original v1 save schema, but reject malformed payloads before migration.
+E.validate=function(s){
+ if(!base.validate(s)||!Number.isInteger(s.month)||s.month<1||s.month>12||!Number.isInteger(s.year)||!Number.isFinite(s.tax))return false;
+ const kinds=new Set(['empty','road',...E.ZONES,...E.SERVICES]);
+ const types=new Set(['road',...Object.keys(ROAD_CAPACITY)]);
+ if(!s.grid.every(c=>kinds.has(c.k)&&Number.isInteger(c.lvl)&&c.lvl>=0&&c.lvl<=3&&
+   (c.age===undefined||(Number.isFinite(c.age)&&c.age>=0))&&
+   (c.roadType===undefined||types.has(c.roadType))&&
+   (c.direction===undefined||(Number.isInteger(c.direction)&&c.direction>=0&&c.direction<=3))&&
+   (c.powerLine===undefined||typeof c.powerLine==='boolean')&&
+   (c.waterPipe===undefined||typeof c.waterPipe==='boolean')))return false;
+ if(s.p0!==undefined){
+   const p=s.p0;
+   if(!p||typeof p!=='object'||Array.isArray(p)||(p.citizens!==undefined&&(!Array.isArray(p.citizens)||p.citizens.length>MAX_CITIZENS||!p.citizens.every(c=>c&&typeof c==='object'&&Number.isInteger(c.id)&&Number.isInteger(c.home)))))return false;
+   if(p.fiscal!==undefined&&(!p.fiscal||typeof p.fiscal!=='object'||Array.isArray(p.fiscal)||p.fiscal.zoneTax!==undefined&&(!p.fiscal.zoneTax||typeof p.fiscal.zoneTax!=='object'||Array.isArray(p.fiscal.zoneTax))))return false;
+ }
+ return true;
+};
 function roadType(cell){return cell?.k==='road'?(ROAD_CAPACITY[cell.roadType]?cell.roadType:'road'):null;}
 E.roadType=roadType;
 E.rotateDirection=function(s){migrate(s);s.p0.roadDirection=(s.p0.roadDirection+1)%4;return s.p0.roadDirection;};
@@ -183,7 +200,7 @@ function syncCitizens(s,basic){
   const name=former?.name||(nameA[id%nameA.length]+' '+nameB[Math.floor(E.hash(id,14)*nameB.length)]);
   citizens.push({id,name,age,home,work:job,role:worker?(job>=0?'Empregado':'À procura de emprego'):'Sem atividade profissional',income:job>=0?Math.round(950+E.hash(id,99)*1850):0,route:former?.route||[],commute:former?.commute||0,satisfaction:former?.satisfaction||50});
  }
- p.citizens=citizens;return citizens;
+ return citizens;
 }
 function mobility(s,citizens){
  const flow=new Float32Array(size),agents=[],commute=[],keyPaths=new Map();let trips=0,unreachable=0;
@@ -256,6 +273,10 @@ E.tick=function(s){
  s.money+=extended.balance-afterBasic.balance;
  const fiscal=s.p0.fiscal;
  const payment=Math.min(fiscal.debt,fiscal.debt*.007);fiscal.debt=Math.max(0,Math.round(fiscal.debt-payment));
+ // Commit the citizen snapshot once per simulation tick; analyze() is read-only.
+ const snapshot=syncCitizens(s,afterBasic);
+ mobility(s,snapshot);
+ s.p0.citizens=snapshot;
  if(s.month===1){for(const c of s.p0.citizens)c.age++;}
  fiscal.history.push({date:E.date(s),balance:extended.balance,income:extended.income,expenses:extended.expenses,population:extended.population,traffic:extended.traffic,unemployment:extended.unemployed,treasury:Math.round(s.money)});
  if(fiscal.history.length>48)fiscal.history.splice(0,fiscal.history.length-48);
