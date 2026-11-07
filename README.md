@@ -139,3 +139,27 @@ node tests/ui-smoke.cjs
 ```
 
 O workflow `p01-ci.yml` executa os testes em branches de manutenção e pull requests. `pages.yml` exige a mesma suite antes de publicar a `main`. A validação automatizada não substitui testes manuais de desempenho em Android.
+
+
+## Motor gráfico P2 — Renderização isométrica 3D (novembro de 2026)
+
+Foi introduzido um **renderer WebGL/Three.js progressivo**, separado da simulação e dos saves existentes.
+
+- `graphics-model.js`: gera geometria visual determinística, sem alterar a cidade. Constrói terreno, água, estradas, marcas de circulação, edifícios com volume, janelas, telhados, serviços municipais, árvores e candeeiros.
+- `graphics3d.mjs`: converte a descrição em **InstancedMesh** para evitar milhares de draw calls. Usa câmara ortográfica calibrada para os mesmos pontos de construção do Canvas original, iluminação de dia/crepúsculo/noite, materiais diferentes, animação simples da água e veículos com percurso real.
+- `game.js`: liga o novo renderer às ferramentas de construção, zoom, câmara, camadas do mapa e captura PNG. A ação **3D/2D** permite alternar entre os dois motores sem perder a cidade.
+- A qualidade gráfica adapta-se ao dispositivo: menos geometria de janelas e árvores em ecrãs pequenos, resolução interna limitada pela densidade de pixels. Não existem ainda benchmarks de FPS para todos os Android.
+- `graphics3d.mjs` importa **Three.js 0.186.1** de um CDN fixo. **O primeiro acesso ao modo 3D exige ligação à internet e suporte WebGL**. Se o CDN, WebGL ou renderer falhar, o Canvas 2D anterior mantém o jogo utilizável; os saves continuam inteiramente locais.
+- Não foram introduzidas alterações no motor económico, na migração de saves, nas regras de construção ou na chave `dungeons-metropole-v1`.
+
+### Testes do motor gráfico
+
+```bash
+node --check graphics-model.js
+node --check graphics3d.mjs
+node tests/graphics.cjs
+```
+
+A suite `tests/graphics.cjs` valida os objetos gerados, os níveis de detalhe, sobreposições e determinismo. O workflow `graphics-ci.yml` executa também os testes existentes e um teste de browser Chromium com screenshot guardado nos artefactos do GitHub Actions. Para executar manualmente este teste, instala `playwright-core` e fornece o caminho do navegador na variável `CHROME_BIN`.
+
+**Limitações conhecidas:** a câmara continua com orientação isométrica fixa para manter a correspondência com os controlos; não existem sombras dinâmicas por GPU, reflexos físicos, modo livre de câmara nem terreno com altura editável. O 3D é um salto visual e de arquitetura, não um motor completo de cidades com ruas curvas ou objetos 3D detalhados importados.
