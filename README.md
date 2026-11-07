@@ -114,3 +114,28 @@ node tests/ui-smoke.cjs
 ```
 
 **Limites honestos:** o tráfego é modelado por viagens de trabalho e entregas agregadas por mês, não por cada veículo com colisões ou semáforos; os cidadãos são uma amostra com rotina casa-trabalho, não uma simulação social contínua; as redes usam corredores e conectividade discretizada por parcela; as estradas continuam numa grelha isométrica sem curvas livres, viadutos a vários níveis ou nós complexos. São sistemas funcionais de uma **primeira fase**, não equivalentes à profundidade de Cities: Skylines.
+
+## P0.1 — Estabilidade, saves e testes de regressão (novembro de 2026)
+
+Esta fase consolida o motor P0 sem alterar a versão do ficheiro de cidade (`version: 1`) nem a chave de armazenamento `dungeons-metropole-v1`.
+
+- `CityEngine.analyze()` deixa de substituir os cidadãos no estado persistente durante simples leituras. O snapshot com os percursos é atualizado uma vez por mês em `tick()`.
+- A construção por arrastamento interpola as parcelas atravessadas (evitando falhas quando o ponteiro se move depressa), atualiza os indicadores e guarda apenas no fim de cada gesto.
+- Cada gesto de construção é desfeito como uma só ação; o desfazer incrementa a revisão da rede para invalidar trajetos em cache.
+- Ao importar um save ou criar uma cidade nova, o save anterior é copiado para `dungeons-metropole-v1-backup` no mesmo browser, quando existir espaço disponível. Isto não substitui a exportação manual.
+- A importação rejeita ficheiros acima de 5 MB e saves incompatíveis ou com campos inválidos, mantendo compatibilidade com cidades v1 válidas.
+- O desenho procura atingir 30 FPS no mobile e 60 FPS no desktop (limites de atualização, não garantias de desempenho).
+
+Verificação local, sem dependências externas:
+
+```bash
+node --check engine.js
+node --check p0.js
+node --check game.js
+node tests/smoke.cjs
+node tests/p0.cjs
+node tests/p01.cjs
+node tests/ui-smoke.cjs
+```
+
+O workflow `p01-ci.yml` executa os testes em branches de manutenção e pull requests. `pages.yml` exige a mesma suite antes de publicar a `main`. A validação automatizada não substitui testes manuais de desempenho em Android.
