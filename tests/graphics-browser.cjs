@@ -6,7 +6,7 @@ const assert=require('node:assert/strict');
 const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
-const {chromium}=require('playwright');
+const {chromium}=require('playwright-core');
 
 const root=path.resolve(__dirname,'..');
 const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript',
@@ -27,7 +27,7 @@ const listen=()=>new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const port=server.address().port;
   let browser;
   try{
-    browser=await chromium.launch({headless:true,args:[
+    browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||undefined,args:[
       '--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--disable-gpu-sandbox'
     ]});
     const page=await browser.newPage({viewport:{width:1365,height:820},deviceScaleFactor:1});
