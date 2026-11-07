@@ -40,6 +40,7 @@ if(canvas&&model){
     };
     const materials={};
     const sceneMeshes=[];
+    let waterMesh=null;
     const dummy=new THREE.Object3D();
     const color=new THREE.Color();
     let sceneKey='',currentMapSize=36,previousMode='',enabled=true,activated=false,failed=false;
@@ -94,6 +95,7 @@ if(canvas&&model){
         if(typeof mesh.dispose==='function')mesh.dispose();
       }
       sceneMeshes.length=0;
+      waterMesh=null;
       for(const type of keys){
         const items=description.groups[type];
         if(!items.length)continue;
@@ -114,6 +116,7 @@ if(canvas&&model){
         mesh.instanceMatrix.needsUpdate=true;
         if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
         scene.add(mesh);sceneMeshes.push(mesh);
+        if(type==='water')waterMesh=mesh;
       }
     }
     function updateCamera(w,h,zoom,cam){
@@ -190,6 +193,7 @@ if(canvas&&model){
           setLights(lightingMode);
           updateSelection(hover,selected,tool);
           updateCars(metrics,now);
+          if(waterMesh)waterMesh.position.y=Math.sin(now*.0013)*.009;
           renderer.render(scene,camera);
           if(!activated){activated=true;reveal(true);}
           return true;
