@@ -62,6 +62,15 @@ assert.equal(restored.money,savedBefore.money,'undo restores exact original trea
 assert.equal(restored.totalBuilt,savedBefore.totalBuilt);
 assert.ok(Number.isFinite(restored.p0.revision)&&restored.p0.revision>afterStroke.p0.revision,'undo advances network revision');
 const beforeNewGame=localStorage.getItem(C.SAVE_KEY);
+// A failed backup must never replace the player's existing city.
+const originalSetItem=localStorage.setItem;
+localStorage.setItem=function(key,value){
+ if(key===C.SAVE_KEY+'-backup')throw new Error('QuotaExceededError');
+ return originalSetItem.call(this,key,value);
+};
+action('newGame');
+assert.equal(localStorage.getItem(C.SAVE_KEY),beforeNewGame,'backup failure must abort destructive action');
+localStorage.setItem=originalSetItem;
 action('newGame');
 assert.equal(localStorage.getItem(C.SAVE_KEY+'-backup'),beforeNewGame,'new game backs up the previous save');
 console.log('PASS P0.1 UI: complete drag painting, single save per stroke, atomic undo, route revision and backup');
