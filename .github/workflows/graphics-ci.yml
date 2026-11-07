@@ -33,3 +33,16 @@ jobs:
           node tests/p01.cjs
           node tests/graphics.cjs
           node tests/ui-smoke.cjs
+      - name: Install Playwright Chromium for browser integration
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Browser integration and screenshot
+        run: node tests/graphics-browser.cjs
+      - name: Upload browser screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metropole-webgl-browser
+          path: artifacts/graphics-browser.png
+          if-no-files-found: ignore
