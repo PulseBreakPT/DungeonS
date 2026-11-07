@@ -164,3 +164,9 @@ body.builder-open .tool-section{display:none}
 .modal-row button{min-width:34px;min-height:34px;background:rgba(182,221,180,.1);color:var(--lime);border:1px solid rgba(189,230,188,.3);border-radius:7px;margin-left:3px;font-weight:800}
 .modal-card .action-list button{min-height:40px}
 @media(max-width:740px){.map-mode-panel{max-width:calc(100% - 18px);overflow-x:auto;scrollbar-width:none}.map-mode-panel button{flex:none;padding:8px 9px;font-size:9px}.playbar{overflow-x:auto;justify-content:space-between;scrollbar-width:none}.road-orientation{bottom:max(187px,calc(env(safe-area-inset-bottom) + 178px));max-width:calc(100% - 24px)}body.builder-open .road-orientation{bottom:max(245px,calc(env(safe-area-inset-bottom) + 236px))}.road-orientation button{min-height:42px}}
+/* P2 graphics: WebGL is layered above the 2D world but never intercepts touch.
+ * The 2D canvas retains input events and provides an immediate offline fallback. */
+#world3d{position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none;background:transparent;touch-action:none}
+body.graphics3d-active #world3d{display:block}
+body.graphics3d-active #world{opacity:0}
+body.graphics3d-active .map-vignette{pointer-events:none}

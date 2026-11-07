@@ -10,7 +10,9 @@
   <link rel="stylesheet" href="./style.css?v=3"/>
   <script src="./engine.js" defer></script>
   <script src="./p0.js?v=p0-release-01" defer></script>
-  <script src="./game.js?v=3" defer></script>
+  <script src="./graphics-model.js?v=p2-graphics-01" defer></script>
+  <script src="./game.js?v=p2-graphics-01" defer></script>
+  <script type="module" src="./graphics3d.mjs?v=p2-graphics-01"></script>
 </head>
 <body>
 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="icons-sprite" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -49,6 +51,7 @@
 </svg>
 <div id="app">
   <canvas id="world" aria-label="Mapa interativo da cidade. Seleciona uma ferramenta para construir." tabindex="0"></canvas>
+  <canvas id="world3d" aria-hidden="true"></canvas>
   <div class="map-vignette" aria-hidden="true"></div>
   <div class="film-grain" aria-hidden="true"></div>
 
@@ -62,6 +65,7 @@
       <div class="top-stat happiness"><span class="small-label">SATISFAÇÃO</span><strong id="happiness">--%</strong><span class="subtext">índice de felicidade</span></div>
     </div>
     <div class="top-actions">
+      <button class="top-action" data-action="toggleGraphics" title="Alternar entre o motor 3D e o modo de compatibilidade 2D" aria-label="Alternar gráficos 3D ou 2D"><svg><use href="#i-layers"/></svg><span id="graphicsLabel">2D</span></button>
       <button class="top-action" data-action="cycleLight" title="Alternar dia, crepúsculo e noite" aria-label="Alternar luz"><svg><use href="#i-sun"/></svg><span id="lightLabel">DIA</span></button>
       <button class="top-action" data-action="toggleTools" title="Mostrar ou esconder ferramentas" aria-label="Abrir construção"><svg><use href="#i-sliders"/></svg><span>CONSTRUIR</span></button>
       <button class="top-action" data-action="toggleStats" title="Painel da cidade" aria-label="Abrir informações da cidade"><svg><use href="#i-chart"/></svg><span>RELATÓRIO</span></button>
