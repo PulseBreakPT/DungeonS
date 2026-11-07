@@ -7,9 +7,9 @@ const canvasCtx=new Proxy({
 },{get(obj,key){if(!(key in obj))obj[key]=()=>{};return obj[key]},set(obj,key,value){obj[key]=value;return true}});
 const nodes=new Map(),listeners={};
 const make=id=>({id,style:{},dataset:{},classList:{value:new Set(),add(x){this.value.add(x)},remove(x){this.value.delete(x)},toggle(x,force){let on=force===undefined?!this.value.has(x):force;on?this.value.add(x):this.value.delete(x);return on},contains(x){return this.value.has(x)}},
- addEventListener(name,fn){listeners[id+':'+name]=fn},setAttribute(){},getBoundingClientRect(){return {left:0,top:0,width:1280,height:800}},getContext(){return canvasCtx},toDataURL(){return'data:'},click(){},remove(){},appendChild(){},textContent:'',innerHTML:''});
+ addEventListener(name,fn){listeners[id+':'+name]=fn},setPointerCapture(){},setAttribute(){},getBoundingClientRect(){return {left:0,top:0,width:1280,height:800}},getContext(){return canvasCtx},toDataURL(){return'data:'},click(){},remove(){},appendChild(){},textContent:'',innerHTML:''});
 const document={body:make('body'),hidden:false,getElementById(id){if(!nodes.has(id))nodes.set(id,make(id));return nodes.get(id)},querySelectorAll(){return []},addEventListener(name,fn){listeners['doc:'+name]=fn},createElement(tag){return make(tag)}};
-let raf;const localStorage={data:{},getItem(k){return this.data[k]||null},setItem(k,v){this.data[k]=v}};
+let raf;const localStorage={data:{},writes:0,getItem(k){return this.data[k]||null},setItem(k,v){this.writes++;this.data[k]=v}};
 const window={addEventListener(){},devicePixelRatio:1,CityEngine:C};
 const sandbox={window,document,localStorage,innerWidth:1280,performance:{now:()=>100},requestAnimationFrame(fn){raf=fn},setTimeout(){return 1},clearTimeout(){},console,Math,Date,Blob,URL,confirm:()=>true,prompt:()=> 'Cidade de Teste'};
 vm.runInNewContext(fs.readFileSync('game.js','utf8'),sandbox,{filename:'game.js',timeout:3000});
@@ -39,3 +39,38 @@ console.log('PASS: game bootstrap, city stats, day/dusk/night, builder tools, HU
 
 const htmlP0=fs.readFileSync('index.html','utf8');for(const id of ['roadOrientation','sewageBar','commuteText'])assert.ok(htmlP0.includes('id="'+id+'"'));for(const feature of ['p0.js','data-tool="avenue"','data-tool="oneway"','data-tool="highway"','data-tool="bridge"','data-tool="powerline"','data-tool="waterpipe"','data-tool="sewage"','data-view="power"','data-view="water"','data-action="citizens"'])assert.ok(htmlP0.includes(feature),'missing '+feature);
 console.log('PASS: P0 HTML controls and script registration.');
+// P0.1 UI integration regression: drag must fill every cell, batch saves and undo atomically.
+const tilePoint=(x,y)=>({button:0,pointerId:3,clientX:640+(x-y)*32*1.01,clientY:400+(x+y-36)*16*1.01-25,preventDefault(){}});
+const savedBefore=JSON.parse(localStorage.getItem(C.SAVE_KEY));
+for(const x of [14,15,16])assert.equal(savedBefore.grid[C.idx(x,14)].k,'empty','test tiles must start empty');
+build('road');
+const start=tilePoint(14,14),end=tilePoint(16,14);
+const writeCount=localStorage.writes;
+listeners['world:pointerdown']({...start,type:'pointerdown'});
+listeners['world:pointermove']({...end,type:'pointermove'});
+assert.equal(localStorage.writes,writeCount,'no localStorage writes per dragged cell');
+listeners['world:pointerup']({...end,type:'pointerup'});
+assert.equal(localStorage.writes,writeCount+1,'one save per completed build stroke');
+const afterStroke=JSON.parse(localStorage.getItem(C.SAVE_KEY));
+for(const x of [14,15,16])assert.equal(afterStroke.grid[C.idx(x,14)].k,'road','no gaps on fast drag');
+assert.equal(savedBefore.money-afterStroke.money,3*C.COST.road,'charge for exactly three road tiles');
+assert.ok(afterStroke.p0.revision>savedBefore.p0.revision);
+action('undo');
+const restored=JSON.parse(localStorage.getItem(C.SAVE_KEY));
+for(const x of [14,15,16])assert.deepEqual(restored.grid[C.idx(x,14)],savedBefore.grid[C.idx(x,14)],'undo restores all tiles in the stroke');
+assert.equal(restored.money,savedBefore.money,'undo restores exact original treasury');
+assert.equal(restored.totalBuilt,savedBefore.totalBuilt);
+assert.ok(Number.isFinite(restored.p0.revision)&&restored.p0.revision>afterStroke.p0.revision,'undo advances network revision');
+const beforeNewGame=localStorage.getItem(C.SAVE_KEY);
+// A failed backup must never replace the player's existing city.
+const originalSetItem=localStorage.setItem;
+localStorage.setItem=function(key,value){
+ if(key===C.SAVE_KEY+'-backup')throw new Error('QuotaExceededError');
+ return originalSetItem.call(this,key,value);
+};
+action('newGame');
+assert.equal(localStorage.getItem(C.SAVE_KEY),beforeNewGame,'backup failure must abort destructive action');
+localStorage.setItem=originalSetItem;
+action('newGame');
+assert.equal(localStorage.getItem(C.SAVE_KEY+'-backup'),beforeNewGame,'new game backs up the previous save');
+console.log('PASS P0.1 UI: complete drag painting, single save per stroke, atomic undo, route revision and backup');

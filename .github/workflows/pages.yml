@@ -26,6 +26,7 @@ jobs:
           node --check p0.js
           node tests/smoke.cjs
           node tests/p0.cjs
+          node tests/p01.cjs
           node tests/ui-smoke.cjs
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
