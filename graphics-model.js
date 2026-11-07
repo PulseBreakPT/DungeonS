@@ -126,7 +126,7 @@
         return;
       }
       const color={school:'#d3b48d',clinic:'#c5d9dc',fire:'#ce8b7d',police:'#a6b8ce',power:'#999b93',water:'#8bafb5',sewage:'#8ca4a1'}[k]||'#beb7a5';
-      const h=k==='power'||k==='sewage'?.66:k==='clinic'?1.18:.78;
+      const h=(k==='power'||k==='sewage') ? .66 : k==='clinic' ? 1.18 : .78;
       put('shadow',x+.1,.01,y+.1,.84,.014,.81,'#1c342c');
       put('walls',x,h/2+.06,y,.83,h,.78,color);
       put('roof',x,h+.075,y,.86,.06,.80,k==='fire'?'#a84d47':'#5c7478');
